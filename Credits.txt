@@ -1,0 +1,6 @@
+Credits
+
+Images - Tic Tac Toe
+tic_tac_toe_X_texture by Perpixel from icon-icons.com
+tic_tac_toe_O_texture by DiemenDesign from icon-icons.com
+tic_tac_toe_line_texture by Graphicsbay from icon-icons.com
