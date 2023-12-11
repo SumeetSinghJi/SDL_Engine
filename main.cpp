@@ -10,16 +10,22 @@
 
 /*
     To DO - Tic Tac Toe
-    * Popup player wins, want to "PLAY AGAIN || World Map" - performs reset variables
+    * Draw function broken, AI keeps trying to pick something
+    * On win SDL Delay then reset variables() 
     * Popup expand  -
-    *   Play again - Computer | Player 2 (Multiplayer)
+    *   Play against - Computer | Player 2 (Multiplayer)
     *   X is (Player 1 or 2) | O is (Player 1 or 2)
     *   Start first player 1 or 2
     *   Tournament mode: Best out of (1, 2, 3, Custom: ), new variable: tic_tac_tow_show_lives = true;
+    *   New function for playing with 2 people
     * add rules for Tic Tac Toe to finish, Add trivia for history, etc.,
     * on Win draw line
     * Draw lives
     * Add Timer
+    * Parralex image background
+    * Roman hand mouse cursor or gladiator sword
+    * keyboard handles
+    * gamepad handles 
     * Frequency rect, player won variable + player choose e.g. : Player 1 Win - X, Player 2 Win - O, Latest winner: Player 2 Win - X
 */
 
@@ -56,7 +62,7 @@ int windowHeight = 800;
 bool quit = false;
 int fontSize = 24;
 
-SDL_Texture *restartTexture;
+
 
 // tic_tac_toe_textures
 SDL_Texture *tic_tac_toe_position_X_texture;
@@ -64,35 +70,30 @@ SDL_Texture *tic_tac_toe_position_O_texture;
 SDL_Texture *tic_tac_toe_position_line_texture;
 
 // HUD textures
+SDL_Texture *restartTexture = nullptr;     // In game - restart game button
 SDL_Texture *timerTexture = nullptr;     // In game - timer box
 SDL_Texture *frequencyTexture = nullptr; // In game - frequency box
-SDL_Texture *heartTexture = nullptr; // In game - hearts representing lives if game uses lives
+SDL_Texture *heartTexture = nullptr;     // In game - hearts representing lives if game uses lives
 
 // Game - Tic Tac Toe Variables
 int tic_tac_toe_ROWS = 3;
 int tic_tac_toe_COLUMNS = 3;
 int tic_tac_toe_player_choice = 3;
 int tic_tac_toe_opponent_choice = 3;
-int tic_tac_toe_position_1 = 2;
-int tic_tac_toe_position_2 = 2;
-int tic_tac_toe_position_3 = 2;
-int tic_tac_toe_position_4 = 2;
-int tic_tac_toe_position_5 = 2;
-int tic_tac_toe_position_6 = 2;
-int tic_tac_toe_position_7 = 2;
-int tic_tac_toe_position_8 = 2;
-int tic_tac_toe_position_9 = 2;
+std::vector<int> tic_tac_toe_positions = {2, 2, 2, 2, 2, 2, 2, 2, 2};
 bool tic_tac_toe_player_choose_x_or_o = false;
-bool tic_tac_toe_opponent_won_game = false;
-bool tic_tac_toe_player_won_game = false;
-bool tic_tac_toe_draw_game = false;
+int tic_tac_toe_winner = 0; // 1 = player, 2 = opponent, 3 = Draw
+std::vector<int> tic_tac_toe_winner_history;
 bool tic_tac_toe_game_over = false;
-bool tic_tac_toe_player_opponent_game = false;
 bool tic_tac_toe_opponentsTurn = false;
 bool tic_tac_toe_showPopup = true;
+bool tic_tac_toe_all_positions_available = true;
+int selectedOption = 0;    // For Keyboard arrow key or Gamepad d-pad selection
+int menuTotalOptions = 13; // For Keyboard arrow key or Gamepad d-pad selection
 
 // FUNCTION PROTOTYPES
-void tic_tac_tie_load_textures();
+void tic_tac_toe_load_textures();
+void end_SDL();
 
 void load_music(std::string songTitle)
 {
@@ -193,8 +194,11 @@ void load_textures()
 {
     // Splash screen
     splashScreenTexture = load_texture("assets/graphics/backgrounds/AgniSamooh-HD-logo.png", "Developer Splash screen");
+    // HUD textures
     restartTexture = load_texture("assets/graphics/buttons/settings/restart-button.png", "Restart Button");
     timerTexture = load_texture("assets/graphics/HUD/timer.png", "Timer Button");
+    heartTexture = load_texture("assets/graphics/HUD/heart.png", "Heart");
+    frequencyTexture = load_texture("assets/graphics/HUD/frequency.png", "Frequency");
 }
 void start_SDL()
 {
@@ -250,49 +254,59 @@ void start_SDL()
     }
     load_fonts();
     load_textures();
-    tic_tac_tie_load_textures();
+    tic_tac_toe_load_textures();
     load_music(songTitle);
     load_sound();
 }
 
-
-
-void draw_timer() {
-    SDL_Rect timerRect = {(windowWidth / 4), (windowHeight / 4), (windowWidth / 2), (windowHeight / 2)};
-    SDL_RenderCopy(renderer, timerTexture, nullptr, &timerRect);
+void draw_timer()
+{
+    SDL_Rect timerRect = {static_cast<int>(windowWidth * 0.43), static_cast<int>(windowHeight * 0.15), (windowWidth / 8), (windowHeight / 14)};
+    SDL_RenderCopy(renderer, timerTexture, nullptr, &timerRect); 
 }
-void draw_win_frequency() {
-    SDL_Rect frequencyRect = {(windowWidth / 4), (windowHeight / 4), (windowWidth / 2), (windowHeight / 2)};
+void draw_win_frequency(std::vector<int> winners)
+{
+    SDL_Rect frequencyRect = {static_cast<int>(windowWidth * 0.8), static_cast<int>(windowHeight * 0.3), (windowWidth / 6), (windowHeight / 6)};
     SDL_RenderCopy(renderer, frequencyTexture, nullptr, &frequencyRect);
+
+    std::string winnerString = "";
+
+    for(const auto& winner : winners) {
+        if(winner == 1) {
+            winnerString = "Player";
+        } else if(winner == 2) {
+            winnerString = "Opponent";
+        } else if(winner == 3) {
+            winnerString = "Draw";
+        }
+        std::string renderWinner = "The Winner is: " + winnerString;
+        int yOffSet = 40; // include a space of 40 y for Render text height location
+        render_text(renderWinner, static_cast<int>(windowWidth * 0.8), static_cast<int>(windowHeight * 0.3) + yOffSet);
+        yOffSet += 40; // add a space for next winner
+    }
 }
-void draw_lives(bool game_uses_lives) {
-     if (game_uses_lives) {
-        SDL_Rect heartRect = {(windowWidth / 4), (windowHeight / 4), (windowWidth / 2), (windowHeight / 2)};
+void draw_lives(bool game_uses_lives)
+{
+    if (game_uses_lives)
+    {
+        SDL_Rect heartRect = {(windowWidth / 1), (windowHeight / 1), (windowWidth / 1), (windowHeight / 1)};
         SDL_RenderCopy(renderer, heartTexture, nullptr, &heartRect);
     }
 }
 
-
-
-void tic_tac_tie_load_textures()
+void tic_tac_toe_load_textures()
 {
     tic_tac_toe_position_X_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_X_texture.png", "Tic Tac Toe X image");
     tic_tac_toe_position_O_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_O_texture.png", "Tic Tac Toe O image");
     tic_tac_toe_position_line_texture = load_texture("assets/graphics/games/tic_tac_toe/tic_tac_toe_line_texture.png", "Tic Tac Toe Line image");
     romeDayBackgroundTexture = load_texture("assets/graphics/backgrounds/rome-day.jpg", "Rome Day Background");
-
-    // HUD textures
-    heartTexture = load_texture("assets/graphics/HUD/settings/heart.png", "Heart");
-    timerTexture = load_texture("assets/graphics/HUD/settings/timer.png", "Timer");
-    frequencyTexture = load_texture("assets/graphics/HUD/settings/frequency.png", "Frequency");
-
 }
 
 void tic_tac_toe_draw_field()
 {
     // Play area
     SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND); // Set the blend mode to enable transparency
-    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 64); // RGB value: light grey, last digit (Alpha value = 256 / 4) (75% transparency)
+    SDL_SetRenderDrawColor(renderer, 100, 100, 100, 64);       // RGB value: light grey, last digit (Alpha value = 256 / 4) (75% transparency)
     SDL_Rect tic_tac_toe_rect = {(windowWidth / 4), (windowHeight / 4), (windowWidth / 2), (windowHeight / 2)};
     SDL_RenderFillRect(renderer, &tic_tac_toe_rect);
 
@@ -359,7 +373,6 @@ void tic_tac_toe_draw_choose_x_or_o_popup_window()
 }
 void tic_tac_toe_draw_X_or_O()
 {
-
     SDL_Rect restartRect = {static_cast<int>(windowWidth * 0.9), static_cast<int>(windowHeight * 0.4), (windowWidth / 8), (windowHeight / 8)};
     SDL_RenderCopy(renderer, restartTexture, nullptr, &restartRect);
 
@@ -373,29 +386,17 @@ void tic_tac_toe_draw_X_or_O()
         {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)},
         {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)},
         {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)}};
-
-    std::vector<int> positions = {
-        tic_tac_toe_position_1,
-        tic_tac_toe_position_2,
-        tic_tac_toe_position_3,
-        tic_tac_toe_position_4,
-        tic_tac_toe_position_5,
-        tic_tac_toe_position_6,
-        tic_tac_toe_position_7,
-        tic_tac_toe_position_8,
-        tic_tac_toe_position_9};
-
-    for (size_t i = 0; i < positions.size(); ++i)
+    for (size_t i = 0; i < tic_tac_toe_positions.size(); ++i)
     {
-        if (positions[i] == 0)
+        if (tic_tac_toe_positions[i] == 0)
         {
             SDL_RenderCopy(renderer, tic_tac_toe_position_O_texture, nullptr, &positionRects[i]);
         }
-        else if (positions[i] == 1)
+        else if (tic_tac_toe_positions[i] == 1)
         {
             SDL_RenderCopy(renderer, tic_tac_toe_position_X_texture, nullptr, &positionRects[i]);
         }
-        else if (positions[i] == 2)
+        else if (tic_tac_toe_positions[i] == 2)
         {
             // Do nothing for position 2
         }
@@ -406,22 +407,38 @@ void tic_tac_toe_new_game_reset_variables()
 {
     tic_tac_toe_player_choice = 3;
     tic_tac_toe_opponent_choice = 3;
-    tic_tac_toe_position_1 = 2;
-    tic_tac_toe_position_2 = 2;
-    tic_tac_toe_position_3 = 2;
-    tic_tac_toe_position_4 = 2;
-    tic_tac_toe_position_5 = 2;
-    tic_tac_toe_position_6 = 2;
-    tic_tac_toe_position_7 = 2;
-    tic_tac_toe_position_8 = 2;
-    tic_tac_toe_position_9 = 2;
+    tic_tac_toe_positions = {2, 2, 2, 2, 2, 2, 2, 2, 2};
     tic_tac_toe_player_choose_x_or_o = false;
-    tic_tac_toe_opponent_won_game = false;
-    tic_tac_toe_player_won_game = false;
+    tic_tac_toe_winner = 0;
     tic_tac_toe_game_over = false;
-    tic_tac_toe_player_opponent_game = false;
     tic_tac_toe_opponentsTurn = false;
     tic_tac_toe_showPopup = true;
+    tic_tac_toe_all_positions_available = true;
+}
+
+void tic_tac_toe_is_position_taken(int index)
+{
+    int gridPosition = index + 1;
+    std::string competitor = tic_tac_toe_opponentsTurn ? "Opponent" : "Player";
+
+    if (tic_tac_toe_positions[index] == 2)
+    {
+        int choice = (competitor == "Player") ? tic_tac_toe_player_choice : tic_tac_toe_opponent_choice;
+        tic_tac_toe_positions[index] = choice;
+
+        if (!tic_tac_toe_game_over)
+        {
+            tic_tac_toe_opponentsTurn = !tic_tac_toe_opponentsTurn;
+            if (tic_tac_toe_opponentsTurn)
+            {
+                SDL_Delay(1000);
+            }
+        }
+    }
+    else
+    {
+        std::cout << competitor<< ", Position: " << gridPosition << " is taken. Try again." << std::endl;
+    }
 }
 
 void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
@@ -431,15 +448,16 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
     SDL_Rect tic_tac_toe_X_rect = {static_cast<int>(windowWidth * 0.4), static_cast<int>(windowHeight * 0.5), (windowWidth / 10), (windowHeight / 10)};
     SDL_Rect tic_tac_toe_O_rect = {static_cast<int>(windowWidth * 0.5), static_cast<int>(windowHeight * 0.5), (windowWidth / 10), (windowHeight / 10)};
 
-    SDL_Rect tic_tac_toe_position_1_rect = {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_2_rect = {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_3_rect = {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_4_rect = {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_5_rect = {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_6_rect = {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_7_rect = {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_8_rect = {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)};
-    SDL_Rect tic_tac_toe_position_9_rect = {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)};
+    std::vector<SDL_Rect> positionRects = {
+        {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)}};
 
     SDL_Rect restartRect = {static_cast<int>(windowWidth * 0.9), static_cast<int>(windowHeight * 0.4), (windowWidth / 8), (windowHeight / 8)};
 
@@ -448,166 +466,20 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
     // Choose X or O to start
     if (!tic_tac_toe_game_over)
     {
-        // main game code
-        if (!tic_tac_toe_showPopup)
+        if (!tic_tac_toe_showPopup) // main game code
         {
-            if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_1_rect))
+            for (int i = 0; i < positionRects.size(); ++i)
             {
-                if (tic_tac_toe_player_choice == 0)
+                if (SDL_PointInRect(&mousePosition, &positionRects[i]))
                 {
-                    tic_tac_toe_position_1 = 0;
+                    int gridPosition = i + 1;
+                    std::cout << "Player choose Position: " << gridPosition << std::endl;
+                    tic_tac_toe_is_position_taken(i);
                 }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_1 = 1;
-                }
-                std::cout << "Player choose Position 1 value is now: " << tic_tac_toe_position_1 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_2_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_2 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_2 = 1;
-                }
-                std::cout << "Player choose Position 2 value is now: " << tic_tac_toe_position_2 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_3_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_3 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_3 = 1;
-                }
-                std::cout << "Player choose Position 3 value is now: " << tic_tac_toe_position_3 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_4_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_4 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_4 = 1;
-                }
-                std::cout << "Player choose Position 4 value is now: " << tic_tac_toe_position_4 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_5_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_5 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_5 = 1;
-                }
-                std::cout << "Player choose Position 5 value is now: " << tic_tac_toe_position_5 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_6_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_6 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_6 = 1;
-                }
-                std::cout << "Player choose Position 6 value is now: " << tic_tac_toe_position_6 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_7_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_7 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_7 = 1;
-                }
-                std::cout << "Player choose Position 7 value is now: " << tic_tac_toe_position_7 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_8_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_8 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_8 = 1;
-                }
-                std::cout << "Player choose Position 8 value is now: " << tic_tac_toe_position_8 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
-            }
-            else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_position_9_rect))
-            {
-                if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_position_9 = 0;
-                }
-                else if (tic_tac_toe_player_choice == 1)
-                {
-                    tic_tac_toe_position_9 = 1;
-                }
-                std::cout << "Player choose Position 9 value is now: " << tic_tac_toe_position_9 << std::endl;
-                if (!tic_tac_toe_game_over)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                }
-                SDL_Delay(1000);
             }
         }
-        else
+        else // Popup code
         {
-            // Popup code
             if (SDL_PointInRect(&mousePosition, &closeButtonRect))
             {
                 if (tic_tac_toe_player_choose_x_or_o)
@@ -617,7 +489,7 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
                 }
                 else
                 {
-                    std::cout << "Erro: Cannot close popup without choosing X or O." << std::endl;
+                    std::cout << "Error: Cannot close popup without choosing X or O." << std::endl;
                 }
             }
             else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_X_rect))
@@ -644,6 +516,83 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
     }
 }
 
+void tic_tac_toe_keyboard_handle(SDL_Event event)
+{
+    SDL_Rect tic_tac_toe_X_rect = {static_cast<int>(windowWidth * 0.4), static_cast<int>(windowHeight * 0.5), (windowWidth / 10), (windowHeight / 10)};
+    SDL_Rect tic_tac_toe_O_rect = {static_cast<int>(windowWidth * 0.5), static_cast<int>(windowHeight * 0.5), (windowWidth / 10), (windowHeight / 10)};
+
+    std::vector<SDL_Rect> positionRects = {
+        {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.45), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.45), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)},
+        {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.6), (windowWidth / 8), (windowHeight / 8)}};
+
+    SDL_Rect restartRect = {static_cast<int>(windowWidth * 0.9), static_cast<int>(windowHeight * 0.4), (windowWidth / 8), (windowHeight / 8)};
+
+    SDL_Rect closeButtonRect = {static_cast<int>(windowWidth * 0.6), static_cast<int>(windowHeight * 0.35), (windowWidth / 20), (windowHeight / 20)};
+
+    // Highlight the selected option for keyboard arrow key and gamepad d pad key input
+    SDL_Rect selectedRect = {
+        static_cast<int>(windowWidth * 0.35),
+        static_cast<int>(windowHeight * 0.25) + selectedOption * 100, // Spacing (must be bigger then sdl_renders.h same rect)
+        static_cast<int>(windowWidth * 0.3),
+        static_cast<int>(windowWidth * 0.3)};
+
+    SDL_Point selectedPoint = {selectedRect.x, selectedRect.y}; // This is the selectedRect which overlaps the button rects
+
+    switch (event.key.keysym.sym)
+    {
+    case SDLK_ESCAPE:
+        std::cout << "You clicked button: ESC" << std::endl;
+        end_SDL();
+        break;
+    case SDLK_UP:
+        std::cout << "You clicked button: UP" << std::endl;
+        selectedOption = (selectedOption - 1 + menuTotalOptions) % menuTotalOptions;
+        break;
+    case SDLK_DOWN:
+        std::cout << "You clicked button: DOWN" << std::endl;
+        selectedOption = (selectedOption + 1) % menuTotalOptions;
+        break;
+    case SDLK_RETURN:
+        std::cout << "You clicked button: RETURN | ENTER" << std::endl;
+        if (SDL_PointInRect(&selectedPoint, &restartRect))
+        {
+            std::cout << "You clicked: Restart game" << std::endl;
+            tic_tac_toe_new_game_reset_variables();
+        }
+        else if (SDL_PointInRect(&selectedPoint, &closeButtonRect))
+        {
+            std::cout << "You clicked: Close popup" << std::endl;
+            tic_tac_toe_showPopup = false;
+        }
+        break;
+    default:
+        std::cout << "You pressed a non-configured keyboard input." << std::endl;
+        break;
+    }
+}
+
+void tic_tac_toe_gamepad_handle(int button)
+{
+}
+
+void tic_tac_toe_update_ai_logic()
+{
+    while (tic_tac_toe_opponentsTurn)
+    {
+        int i = rand() % 9; // look for 0 - 8 only as tic_tac_toe_positions vector is from 0 - 8 (9 values)
+        int gridPosition = i + 1;
+        std::cout << "AI choose Position: " << gridPosition << std::endl;
+        tic_tac_toe_is_position_taken(i);
+    }
+}
+
 void tic_tac_toe_update_winning_logic()
 {
     /* Tic Tac Toe field positioning
@@ -654,206 +603,73 @@ void tic_tac_toe_update_winning_logic()
     7 | 8 | 9 */
 
     // Player win condition
-    if ((tic_tac_toe_position_1 == tic_tac_toe_player_choice && tic_tac_toe_position_2 == tic_tac_toe_player_choice && tic_tac_toe_position_3 == tic_tac_toe_player_choice) || // Top row
-        (tic_tac_toe_position_4 == tic_tac_toe_player_choice && tic_tac_toe_position_5 == tic_tac_toe_player_choice && tic_tac_toe_position_6 == tic_tac_toe_player_choice) || // Middle row
-        (tic_tac_toe_position_7 == tic_tac_toe_player_choice && tic_tac_toe_position_8 == tic_tac_toe_player_choice && tic_tac_toe_position_9 == tic_tac_toe_player_choice) || // Bottom row
-        (tic_tac_toe_position_1 == tic_tac_toe_player_choice && tic_tac_toe_position_4 == tic_tac_toe_player_choice && tic_tac_toe_position_7 == tic_tac_toe_player_choice) || // Left column
-        (tic_tac_toe_position_2 == tic_tac_toe_player_choice && tic_tac_toe_position_5 == tic_tac_toe_player_choice && tic_tac_toe_position_8 == tic_tac_toe_player_choice) || // Middle column
-        (tic_tac_toe_position_3 == tic_tac_toe_player_choice && tic_tac_toe_position_6 == tic_tac_toe_player_choice && tic_tac_toe_position_9 == tic_tac_toe_player_choice) || // Right column
-        (tic_tac_toe_position_1 == tic_tac_toe_player_choice && tic_tac_toe_position_5 == tic_tac_toe_player_choice && tic_tac_toe_position_9 == tic_tac_toe_player_choice) || // Diagonal 1
-        (tic_tac_toe_position_3 == tic_tac_toe_player_choice && tic_tac_toe_position_5 == tic_tac_toe_player_choice && tic_tac_toe_position_7 == tic_tac_toe_player_choice))   // Diagonal 2
+    if ((tic_tac_toe_positions[0] == tic_tac_toe_player_choice && tic_tac_toe_positions[1] == tic_tac_toe_player_choice && tic_tac_toe_positions[2] == tic_tac_toe_player_choice) || // Top row
+        (tic_tac_toe_positions[3] == tic_tac_toe_player_choice && tic_tac_toe_positions[4] == tic_tac_toe_player_choice && tic_tac_toe_positions[5] == tic_tac_toe_player_choice) || // Middle row
+        (tic_tac_toe_positions[6] == tic_tac_toe_player_choice && tic_tac_toe_positions[7] == tic_tac_toe_player_choice && tic_tac_toe_positions[8] == tic_tac_toe_player_choice) || // Bottom row
+        (tic_tac_toe_positions[0] == tic_tac_toe_player_choice && tic_tac_toe_positions[3] == tic_tac_toe_player_choice && tic_tac_toe_positions[6] == tic_tac_toe_player_choice) || // Left column
+        (tic_tac_toe_positions[1] == tic_tac_toe_player_choice && tic_tac_toe_positions[4] == tic_tac_toe_player_choice && tic_tac_toe_positions[7] == tic_tac_toe_player_choice) || // Middle column
+        (tic_tac_toe_positions[2] == tic_tac_toe_player_choice && tic_tac_toe_positions[5] == tic_tac_toe_player_choice && tic_tac_toe_positions[8] == tic_tac_toe_player_choice) || // Right column
+        (tic_tac_toe_positions[0] == tic_tac_toe_player_choice && tic_tac_toe_positions[4] == tic_tac_toe_player_choice && tic_tac_toe_positions[8] == tic_tac_toe_player_choice) || // Diagonal 1
+        (tic_tac_toe_positions[2] == tic_tac_toe_player_choice && tic_tac_toe_positions[4] == tic_tac_toe_player_choice && tic_tac_toe_positions[6] == tic_tac_toe_player_choice))   // Diagonal 2
     {
         if (!tic_tac_toe_game_over)
         {
             std::cout << "Player wins" << std::endl;
             tic_tac_toe_game_over = true;
-            tic_tac_toe_player_won_game = true;
+            tic_tac_toe_winner = 1;
             tic_tac_toe_opponentsTurn = false;
             Mix_PlayChannel(-1, winGameSound, 0);
         }
     }
 
-    // opponent win condition
-    if ((tic_tac_toe_position_1 == tic_tac_toe_opponent_choice && tic_tac_toe_position_2 == tic_tac_toe_opponent_choice && tic_tac_toe_position_3 == tic_tac_toe_opponent_choice) || // Top row
-        (tic_tac_toe_position_4 == tic_tac_toe_opponent_choice && tic_tac_toe_position_5 == tic_tac_toe_opponent_choice && tic_tac_toe_position_6 == tic_tac_toe_opponent_choice) || // Middle row
-        (tic_tac_toe_position_7 == tic_tac_toe_opponent_choice && tic_tac_toe_position_8 == tic_tac_toe_opponent_choice && tic_tac_toe_position_9 == tic_tac_toe_opponent_choice) || // Bottom row
-        (tic_tac_toe_position_1 == tic_tac_toe_opponent_choice && tic_tac_toe_position_4 == tic_tac_toe_opponent_choice && tic_tac_toe_position_7 == tic_tac_toe_opponent_choice) || // Left column
-        (tic_tac_toe_position_2 == tic_tac_toe_opponent_choice && tic_tac_toe_position_5 == tic_tac_toe_opponent_choice && tic_tac_toe_position_8 == tic_tac_toe_opponent_choice) || // Middle column
-        (tic_tac_toe_position_3 == tic_tac_toe_opponent_choice && tic_tac_toe_position_6 == tic_tac_toe_opponent_choice && tic_tac_toe_position_9 == tic_tac_toe_opponent_choice) || // Right column
-        (tic_tac_toe_position_1 == tic_tac_toe_opponent_choice && tic_tac_toe_position_5 == tic_tac_toe_opponent_choice && tic_tac_toe_position_9 == tic_tac_toe_opponent_choice) || // Diagonal 1
-        (tic_tac_toe_position_3 == tic_tac_toe_opponent_choice && tic_tac_toe_position_5 == tic_tac_toe_opponent_choice && tic_tac_toe_position_7 == tic_tac_toe_opponent_choice))   // Diagonal 2
+    // Opponent win condition
+    if ((tic_tac_toe_positions[0] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[1] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[2] == tic_tac_toe_opponent_choice) || // Top row
+        (tic_tac_toe_positions[3] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[4] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[5] == tic_tac_toe_opponent_choice) || // Middle row
+        (tic_tac_toe_positions[6] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[7] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[8] == tic_tac_toe_opponent_choice) || // Bottom row
+        (tic_tac_toe_positions[0] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[3] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[6] == tic_tac_toe_opponent_choice) || // Left column
+        (tic_tac_toe_positions[1] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[4] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[7] == tic_tac_toe_opponent_choice) || // Middle column
+        (tic_tac_toe_positions[2] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[5] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[8] == tic_tac_toe_opponent_choice) || // Right column
+        (tic_tac_toe_positions[0] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[4] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[8] == tic_tac_toe_opponent_choice) || // Diagonal 1
+        (tic_tac_toe_positions[2] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[4] == tic_tac_toe_opponent_choice && tic_tac_toe_positions[6] == tic_tac_toe_opponent_choice))   // Diagonal 2
     {
         if (!tic_tac_toe_game_over)
         {
             std::cout << "Opponent wins" << std::endl;
             tic_tac_toe_game_over = true;
-            tic_tac_toe_opponent_won_game = true;
+            tic_tac_toe_winner = 2;
             tic_tac_toe_opponentsTurn = false;
             Mix_PlayChannel(-1, loseGameSound, 0);
         }
     }
 
     // Draw condition
-    if (tic_tac_toe_player_choose_x_or_o) // If game has started
+    if (!tic_tac_toe_showPopup) // If game has started
     {
-        if (tic_tac_toe_position_1 != 2 && tic_tac_toe_position_2 != 2 && tic_tac_toe_position_3 != 2 &&
-            tic_tac_toe_position_4 != 2 && tic_tac_toe_position_5 != 2 && tic_tac_toe_position_6 != 2 &&
-            tic_tac_toe_position_7 != 2 && tic_tac_toe_position_8 != 2 && tic_tac_toe_position_9 != 2)
+        for (int i = 0; i < tic_tac_toe_positions.size(); ++i)
         {
-            if (!tic_tac_toe_player_won_game && !tic_tac_toe_opponent_won_game)
+            if (tic_tac_toe_positions[i] == 2) // Check for any empty position
             {
-                std::cout << "It's a Draw." << std::endl;
-                tic_tac_toe_game_over = true;
-                tic_tac_toe_draw_game = true;
-                tic_tac_toe_opponentsTurn = false;
-                Mix_PlayChannel(-1, loseGameSound, 0);
+                tic_tac_toe_all_positions_available = false; // no empty positions
+                break;
             }
         }
-    }
-}
 
-void tic_tac_toe_update_ai_logic()
-{
-    if (tic_tac_toe_player_choice == 1)
-    {
-        tic_tac_toe_opponent_choice = 0;
-    }
-    else if (tic_tac_toe_player_choice == 0)
-    {
-        tic_tac_toe_opponent_choice = 1;
-    }
-
-    std::vector<int> positionsTaken = {0, 9};
-
-    while (tic_tac_toe_opponentsTurn)
-    {
-        int tic_tac_toe_ai_position_choice = rand() % 9 + 1;
-
-        switch (tic_tac_toe_ai_position_choice)
+        if (tic_tac_toe_all_positions_available && tic_tac_toe_winner != 0 && tic_tac_toe_winner != 1)
         {
-        case 1:
-            if (tic_tac_toe_position_1 != tic_tac_toe_player_choice && tic_tac_toe_position_1 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_1 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 1. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(0);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 1, but it's taken." << std::endl;
-            }
-            break;
-        case 2:
-            if (tic_tac_toe_position_2 != tic_tac_toe_player_choice && tic_tac_toe_position_2 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_2 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 2. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(1);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 2, but it's taken." << std::endl;
-            }
-            break;
-        case 3:
-            if (tic_tac_toe_position_3 != tic_tac_toe_player_choice && tic_tac_toe_position_3 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_3 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 3. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(2);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 3, but it's taken." << std::endl;
-            }
-            break;
-        case 4:
-            if (tic_tac_toe_position_4 != tic_tac_toe_player_choice && tic_tac_toe_position_4 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_4 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 4. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(3);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 4, but it's taken." << std::endl;
-            }
-            break;
-        case 5:
-            if (tic_tac_toe_position_5 != tic_tac_toe_player_choice && tic_tac_toe_position_5 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_5 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 5. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(4);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 5, but it's taken." << std::endl;
-            }
-            break;
-        case 6:
-            if (tic_tac_toe_position_6 != tic_tac_toe_player_choice && tic_tac_toe_position_6 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_6 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 6. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(5);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 6, but it's taken." << std::endl;
-            }
-            break;
-        case 7:
-            if (tic_tac_toe_position_7 != tic_tac_toe_player_choice && tic_tac_toe_position_7 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_7 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 7. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(6);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 7, but it's taken." << std::endl;
-            }
-            break;
-        case 8:
-            if (tic_tac_toe_position_8 != tic_tac_toe_player_choice && tic_tac_toe_position_8 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_8 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 8. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(7);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 8, but it's taken." << std::endl;
-            }
-            break;
-        case 9:
-            if (tic_tac_toe_position_9 != tic_tac_toe_player_choice && tic_tac_toe_position_9 != tic_tac_toe_opponent_choice)
-            {
-                tic_tac_toe_position_9 = tic_tac_toe_opponent_choice;
-                std::cout << "Opponent chooses Position 9. value is now: " << tic_tac_toe_opponent_choice << std::endl;
-                tic_tac_toe_opponentsTurn = false;
-                positionsTaken.push_back(8);
-            }
-            else
-            {
-                std::cout << "Opponent chooses Position 9, but it's taken." << std::endl;
-            }
-            break;
-        }
-        if (positionsTaken.size() == 10)
-        {
+            std::cout << "It's a Draw." << std::endl;
+            tic_tac_toe_game_over = true;
+            tic_tac_toe_winner = 3;
             tic_tac_toe_opponentsTurn = false;
+            Mix_PlayChannel(-1, loseGameSound, 0);
         }
     }
+
+    if (tic_tac_toe_game_over) {
+        // add winner to winner array to output in winners
+        tic_tac_toe_winner_history.push_back(tic_tac_toe_winner);
+    }
+    
+
 }
 
 void tic_tac_toe_SDL_draw()
@@ -871,15 +687,15 @@ void tic_tac_toe_SDL_draw()
         tic_tac_toe_draw_X_or_O();
     }
 
-    if (tic_tac_toe_player_won_game)
+    if (tic_tac_toe_winner == 1)
     {
         render_text("player wins", static_cast<int>(windowWidth * 0.35), static_cast<int>(windowHeight * 0.8));
     }
-    else if (tic_tac_toe_opponent_won_game)
+    else if (tic_tac_toe_winner == 2)
     {
         render_text("Opponent wins", static_cast<int>(windowWidth * 0.35), static_cast<int>(windowHeight * 0.8));
     }
-    else if (tic_tac_toe_draw_game)
+    else if (tic_tac_toe_winner == 3)
     {
         render_text("It's a Draw.", static_cast<int>(windowWidth * 0.35), static_cast<int>(windowHeight * 0.8));
     }
@@ -916,6 +732,18 @@ void handle_events()
             SDL_GetMouseState(&mouseX, &mouseY);
             tic_tac_toe_mouse_handle(mouseX, mouseY);
         }
+        else if (event.type == SDL_KEYDOWN)
+        {
+            tic_tac_toe_keyboard_handle(event);
+        }
+        else if (event.type == SDL_CONTROLLERBUTTONDOWN)
+        {
+            SDL_ControllerButtonEvent controllerButtonEvent = event.cbutton;
+            int button = controllerButtonEvent.button;
+            {
+                tic_tac_toe_gamepad_handle(button);
+            }
+        }
     }
 }
 void update()
@@ -931,6 +759,11 @@ void draw()
 
     // Draw Tic_tac_toe buttons to field
     tic_tac_toe_SDL_draw();
+
+    // HUD Buttons
+    draw_timer();
+    draw_win_frequency(tic_tac_toe_winner_history);
+    // draw_lives(game_uses_lives);
 
     // Update the screen
     SDL_RenderPresent(renderer);
@@ -976,8 +809,6 @@ void end_SDL()
     SDL_DestroyTexture(timerTexture);
     SDL_DestroyTexture(frequencyTexture);
     SDL_DestroyTexture(heartTexture);
-
-    
 
     // backgrounds
     SDL_DestroyTexture(romeDayBackgroundTexture); // scene 32
