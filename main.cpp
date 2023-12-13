@@ -96,19 +96,22 @@ SDL_Texture *heartTexture = nullptr;     // In game - hearts representing lives 
 // Tic Tac Toe - Global variables
 int tic_tac_toe_ROWS = 3;
 int tic_tac_toe_COLUMNS = 3;
-int tic_tac_toe_player_choice = 3;
-int tic_tac_toe_opponent_choice = 3;
+int tic_tac_toe_player_choice = 3; // 0 = O, 1 = X, 3 = garbage value
+int tic_tac_toe_opponent_choice = 3; // 0 = O, 1 = X, 3 = garbage value
 std::vector<int> tic_tac_toe_positions = {2, 2, 2, 2, 2, 2, 2, 2, 2};
-bool tic_tac_toe_player_choose_x_or_o = false;
 int tic_tac_toe_winner = 0; // 1 = player, 2 = opponent, 3 = Draw
-std::vector<int> tic_tac_toe_winner_history;
-std::vector<int> tic_tac_toe_winner_choice_history;
 bool tic_tac_toe_game_over = false;
 bool tic_tac_toe_opponentsTurn = false;
-bool tic_tac_toe_showPopup = true;
-int tic_tac_toe_choose_lives = 0;
-bool tic_tac_toe_starting_player_chosen = false;
-bool tic_tac_toe_play_against_human = false;
+bool tic_tac_toe_showPopup = true; // for popup
+bool tic_tac_toe_player_choose_x_or_o = false; // for popup - Choose X or O
+int tic_tac_toe_choose_lives = 0; // For popup - choose rounds | lives
+bool tic_tac_toe_starting_player_chosen = false; // For popup - starting player
+bool tic_tac_toe_starting_player_is_x = false; // For popup - starting player
+bool tic_tac_toe_play_against_human = false; // For popup - play against human or computer
+std::vector<int> tic_tac_toe_winner_history; // for winners frequency rect
+std::vector<int> tic_tac_toe_winner_choice_history; // for winners frequency rect
+
+
 int selectedOption = 0;    // For Keyboard arrow key or Gamepad d-pad selection
 int menuTotalOptions = 13; // For Keyboard arrow key or Gamepad d-pad selection
 
@@ -510,11 +513,11 @@ void tic_tac_toe_draw_setup_game_popup_window()
     }
     else
     {
-        if (tic_tac_toe_player_choice == 0)
+        if (!tic_tac_toe_starting_player_is_x)
         {
             render_text("You choose: Starting player O", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
         }
-        else
+        else if (tic_tac_toe_starting_player_is_x)
         {
             render_text("You choose: Starting player X", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
         }
@@ -552,11 +555,11 @@ void tic_tac_toe_draw_setup_game_popup_window()
     {
         if (tic_tac_toe_player_choice == 0)
         {
-            render_text("You choose: Starting player O", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.62));
+            render_text("You choose: Play against Human", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.62));
         }
         else
         {
-            render_text("You choose: Starting player X", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.62));
+            render_text("You choose: Play against Computer", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.62));
         }
     }
 
@@ -930,8 +933,10 @@ void tic_tac_toe_update_new_game_reset_variables()
     tic_tac_toe_game_over = false;
     tic_tac_toe_opponentsTurn = false;
     tic_tac_toe_showPopup = true;
-    tic_tac_toe_starting_player_chosen = false;
     tic_tac_toe_play_against_human = false;
+    tic_tac_toe_choose_lives = 0;
+    tic_tac_toe_starting_player_is_x = false;
+    tic_tac_toe_starting_player_chosen = false;
 
     // Restart timer - generic function
     timerRunning = false;
@@ -1014,7 +1019,7 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
         {
             if (SDL_PointInRect(&mousePosition, &closeButtonRect))
             {
-                if (tic_tac_toe_player_choose_x_or_o)
+                if (tic_tac_toe_player_choose_x_or_o && tic_tac_toe_starting_player_chosen)
                 {
                     std::cout << "You clicked Close Popup window" << std::endl;
                     tic_tac_toe_showPopup = false;
@@ -1045,27 +1050,27 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
                 if (tic_tac_toe_player_choice == 1)
                 {
                     tic_tac_toe_opponentsTurn = false;
-                    tic_tac_toe_starting_player_chosen = true;
                 }
                 else if (tic_tac_toe_player_choice == 0)
-                {
+                { 
                     tic_tac_toe_opponentsTurn = true;
-                    tic_tac_toe_starting_player_chosen = true;
                 }
+                tic_tac_toe_starting_player_is_x = true;
+                tic_tac_toe_starting_player_chosen = true;
             }
             else if (SDL_PointInRect(&mousePosition, &tic_tac_toe_opponent_start_first_rect))
             {
                 std::cout << "You choose: Starting player O" << std::endl;
                 if (tic_tac_toe_player_choice == 0)
-                {
-                    tic_tac_toe_opponentsTurn = true;
-                    tic_tac_toe_starting_player_chosen = true;
+                {            
+                    tic_tac_toe_opponentsTurn = false;              
                 }
                 else if (tic_tac_toe_player_choice == 1)
                 {
-                    tic_tac_toe_opponentsTurn = false;
-                    tic_tac_toe_starting_player_chosen = true;
+                    tic_tac_toe_opponentsTurn = true;
                 }
+                tic_tac_toe_starting_player_is_x = false;;
+                tic_tac_toe_starting_player_chosen = true;
             }
             else if (SDL_PointInRect(&mousePosition, &humanRect))
             {
