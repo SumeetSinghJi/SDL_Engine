@@ -11,23 +11,18 @@
 
 /*
     To DO - Tic Tac Toe
+    * Update everything with rectWidth and Height...
     * Popup expand
     *   Popup only appears when lives are 0; advising who won round
     *   Play against: Computer | Human
-    *   Who starts first 1 or 2 - oppponentTurn = xx
     *   Countdown timer, 10, 15, 20, 30, 60, 120, custom
     *   Lives 1, 2, 3, 5, 10, custom
     * ChatGPT - History, Rules, Trivia
     * on Win draw line
     * Draw lives
-    * Google Test to ensure that logic is all working, somehow implement
-    * NO HARDCODING
-    * Move button size to new variable to match main.cpp so that on change_resolution, button size increases
-    * then find replace all .w and .h and replace
-    * Same with x and y position.
-    * AI logic to do winning moves
-    * Parralex image background, settings button on or off
-    * voice act rules
+    * Google Test
+    * Parralex background with settings toggle
+    * voice acting
     * keyboard handles
     * gamepad handles
 */
@@ -64,6 +59,8 @@ int windowWidth = 1200;
 int windowHeight = 800;
 bool quit = false;
 int fontSize = 24;
+int rectWidth = 50;             // default button Rect width/height
+int rectHeight = 50;            // default button width/height
 
 // Timer
 bool timerRunning = false;
@@ -82,7 +79,6 @@ SDL_Texture *computerTexture = nullptr;
 SDL_Texture *tic_tac_toe_position_X_texture;
 SDL_Texture *tic_tac_toe_position_O_texture;
 SDL_Texture *tic_tac_toe_position_line_texture;
-SDL_Texture *tic_tac_toe_starting_player_texture;
 
 // HUD textures
 SDL_Texture *restartTexture = nullptr;   // In game - restart game button
@@ -116,8 +112,9 @@ int selectedOption = 0;    // For Keyboard arrow key or Gamepad d-pad selection
 int menuTotalOptions = 13; // For Keyboard arrow key or Gamepad d-pad selection
 
 // FUNCTION PROTOTYPES
-void tic_tac_toe_load_textures();
-void end_SDL();
+void tic_tac_toe_load_textures(); // for Start_SDL() only in this Sandbox environment not Main branch
+void tic_tac_toe_SDL_cleanup(); // for keyboard_handle ESC key = quit
+void exit_SDL(); // for keyboard_handle ESC key = quit
 
 // main.cpp function
 void load_music(std::string songTitle)
@@ -408,7 +405,6 @@ void tic_tac_toe_load_textures()
     tic_tac_toe_position_X_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_X_texture.png", "Tic Tac Toe X image");
     tic_tac_toe_position_O_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_O_texture.png", "Tic Tac Toe O image");
     tic_tac_toe_position_line_texture = load_texture("assets/graphics/games/tic_tac_toe/tic_tac_toe_line_texture.png", "Tic Tac Toe Line image");
-    tic_tac_toe_starting_player_texture = load_texture("assets/graphics/games/tic_tac_toe/tic_tac_toe_line_texture.png", "Tic Tac Toe Line image");
     romeDayBackgroundTexture = load_texture("assets/graphics/backgrounds/rome-day.jpg", "Rome Day Background");
 }
 void tic_tac_toe_draw_field()
@@ -1127,7 +1123,8 @@ void tic_tac_toe_keyboard_handle(SDL_Event event)
     {
     case SDLK_ESCAPE:
         std::cout << "You clicked button: ESC" << std::endl;
-        end_SDL();
+        tic_tac_toe_SDL_cleanup();
+        exit_SDL();
         break;
     case SDLK_UP:
         std::cout << "You clicked button: UP" << std::endl;
@@ -1167,10 +1164,9 @@ void tic_tac_toe_SDL_draw()
 
     // HUD Buttons
     draw_timer();
-    draw_lives(tic_tac_toe_choose_lives);
     tic_tac_toe_draw_settings_buttons();
     draw_win_frequency(tic_tac_toe_winner_history, tic_tac_toe_winner_choice_history);
-    // draw_lives(game_uses_lives);
+    draw_lives(tic_tac_toe_choose_lives);
 
     tic_tac_toe_draw_field();
 
@@ -1270,7 +1266,7 @@ void run_SDL()
         draw();
     }
 }
-void end_SDL()
+void exit_SDL()
 {
     // Stop the music
     Mix_HaltMusic();
@@ -1296,7 +1292,6 @@ void end_SDL()
     SDL_DestroyTexture(tic_tac_toe_position_X_texture);
     SDL_DestroyTexture(tic_tac_toe_position_O_texture);
     SDL_DestroyTexture(tic_tac_toe_position_line_texture);
-    SDL_DestroyTexture(tic_tac_toe_starting_player_texture);
 
     // HUD Buttons
     SDL_DestroyTexture(timerTexture);
@@ -1336,6 +1331,6 @@ int main(int argc, char *argv[])
 
     start_SDL();
     run_SDL();
-    end_SDL();
+    exit_SDL();
     return 0;
 }
