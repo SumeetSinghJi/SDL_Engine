@@ -4,7 +4,7 @@ project(SDL_ENGINE)
 # Set paths to SDL2 and SDL2_image (for non-standard location)
 set(CMAKE_PREFIX_PATH "${CMAKE_PREFIX_PATH};${CMAKE_SOURCE_DIR}/src/SDL2/x86_64-w64-mingw32;${CMAKE_SOURCE_DIR}/src/SDL2_image/x86_64-w64-mingw32;${CMAKE_SOURCE_DIR}/src/SDL2_Mixer/x86_64-w64-mingw32;${CMAKE_SOURCE_DIR}/src/SDL2_TTF/x86_64-w64-mingw32")
 
-# find_package looks in /cmake folder to learn to set variables for /bin, /include/SDL2 and /lib
+# find_package looks in /cmake folder to learn to set variables for /bin, /include and /lib
 find_package(SDL2 REQUIRED) # This works but the remainder don't
 find_package(SDL2_image REQUIRED)
 find_package(SDL2_Mixer REQUIRED)

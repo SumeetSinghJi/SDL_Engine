@@ -11,24 +11,20 @@
 
 /*
     To DO - Tic Tac Toe
-    * Option to toggle between music
-    * option to upload own songs
-    * Option to mod?
-    * Draw function broken, AI keeps trying to pick something
-    * Rect for choosing time
     * Popup expand
+    *   Popup only appears when lives are 0; advising who won round
     *   Play against: Computer | Human
-    *   X or O
-    *   Who starts first 1 or 2
+    *   Who starts first 1 or 2 - oppponentTurn = xx
     *   Countdown timer, 10, 15, 20, 30, 60, 120, custom
     *   Lives 1, 2, 3, 5, 10, custom
-    * Tic Tac Toe - Rules Trivia
+    * ChatGPT - History, Rules, Trivia
     * on Win draw line
     * Draw lives
-    * Parralex image background
+    * AI logic to do winning moves
+    * Parralex image background, settings button on or off
+    * voice act rules
     * keyboard handles
     * gamepad handles
-    * Frequency rect, player won variable + player choose e.g. : Player 1 Win - X, Player 2 Win - O, Latest winner: Player 2 Win - X
 */
 
 // SDL
@@ -67,11 +63,11 @@ int fontSize = 24;
 // Timer
 bool timerRunning = false;
 bool countdownStarted = false;
-int countdownSeconds = 120; // Initial countdown time
+int countdownSeconds = 20; // Initial countdown time
 
 // Declare variables to track player choices
-bool xSelected = false;             // Declare variables to track player choices
-bool oSelected = false;             // Declare variables to track player choices
+bool xSelected = false; // Declare variables to track player choices
+bool oSelected = false; // Declare variables to track player choices
 
 // Tic Tac Toe - Textures
 SDL_Texture *tic_tac_toe_position_X_texture;
@@ -101,7 +97,7 @@ std::vector<int> tic_tac_toe_winner_choice_history;
 bool tic_tac_toe_game_over = false;
 bool tic_tac_toe_opponentsTurn = false;
 bool tic_tac_toe_showPopup = true;
-bool tic_tac_toe_all_positions_available = true;
+int tic_tac_toe_choose_lives = 3;
 int selectedOption = 0;    // For Keyboard arrow key or Gamepad d-pad selection
 int menuTotalOptions = 13; // For Keyboard arrow key or Gamepad d-pad selection
 
@@ -372,15 +368,20 @@ void draw_win_frequency(const std::vector<int> &winners, const std::vector<int> 
         frequencyRectyOffSet += 40; // Move to the next vertical position for next winner
     }
 }
-
-void draw_lives(bool game_uses_lives)
+void draw_lives(int lives)
 {
-    if (game_uses_lives)
-    {
-        SDL_Rect heartRect = {(windowWidth / 1), (windowHeight / 1), (windowWidth / 1), (windowHeight / 1)};
+    int initialHeartX = static_cast<int>(windowWidth * 0.37); // Initial x-position for the first heart
+    int heartWidth = windowWidth / 26; // Width of each heart
+    int xHeartSpacing = 5; // Adjust this value for spacing between hearts
+
+    SDL_Rect heartRect = { initialHeartX, static_cast<int>(windowHeight * 0.15), heartWidth, heartWidth };
+
+    for (int i = 0; i < lives; i++) {
+        heartRect.x = initialHeartX + (heartWidth + xHeartSpacing) * i;
         SDL_RenderCopy(renderer, heartTexture, nullptr, &heartRect);
     }
 }
+
 
 // Tic Tac Toe - Draws
 void tic_tac_toe_load_textures()
@@ -440,48 +441,58 @@ void tic_tac_toe_draw_setup_game_popup_window()
     SDL_Rect closeButtonRect = {static_cast<int>(windowWidth * 0.69), static_cast<int>(windowHeight * 0.28), (windowWidth / 22), (windowHeight / 22)};
     SDL_RenderCopy(renderer, tic_tac_toe_position_X_texture, nullptr, &closeButtonRect);
 
-    // Render text and buttons for player to pick choice
-    if (tic_tac_toe_player_choose_x_or_o == false)
+    /*
+
+        Choose X or O
+
+    */
+    if (!tic_tac_toe_player_choose_x_or_o)
     {
         render_text("Select Crosses (X) or Naughts (0)", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.26));
-
-        // X button
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
-        SDL_Rect XborderLineRect = {static_cast<int>(windowWidth * 0.32) - 4, static_cast<int>(windowHeight * 0.34) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
-        SDL_RenderFillRect(renderer, &XborderLineRect);
-
-        SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
-        SDL_Rect XborderRect = {static_cast<int>(windowWidth * 0.32) - 2, static_cast<int>(windowHeight * 0.34) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
-        SDL_RenderFillRect(renderer, &XborderRect);
-
-        SDL_Rect tic_tac_toe_X_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.34), (windowWidth / 18), (windowHeight / 18)};
-        SDL_RenderCopy(renderer, tic_tac_toe_position_X_texture, nullptr, &tic_tac_toe_X_rect);
-
-        // O button
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
-        SDL_Rect OborderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.34) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
-        SDL_RenderFillRect(renderer, &OborderLineRect);
-
-        SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
-        SDL_Rect OborderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.34) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
-        SDL_RenderFillRect(renderer, &OborderRect);
-
-        SDL_Rect tic_tac_toe_O_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.34), (windowWidth / 18), (windowHeight / 18)};
-        SDL_RenderCopy(renderer, tic_tac_toe_position_O_texture, nullptr, &tic_tac_toe_O_rect);
     }
     else // after picking choice advise player what they choose
     {
         if (tic_tac_toe_player_choice == 0)
         {
-            render_text("You choose: 0", static_cast<int>(windowWidth * 0.35), static_cast<int>(windowHeight * 0.4));
+            render_text("You choose: 0", static_cast<int>(windowWidth * 0.69), static_cast<int>(windowHeight * 0.28));
             // highlight selected rect, and in if condition dont hide, so player can repick.
         }
         else
         {
-            render_text("You choose: X", static_cast<int>(windowWidth * 0.35), static_cast<int>(windowHeight * 0.4));
+            render_text("You choose: X", static_cast<int>(windowWidth * 0.69), static_cast<int>(windowHeight * 0.28));
             // highlight selected rect, and in if condition dont hide, so player can repick.
         }
     }
+
+    // X button
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect XborderLineRect = {static_cast<int>(windowWidth * 0.32) - 4, static_cast<int>(windowHeight * 0.34) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &XborderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect XborderRect = {static_cast<int>(windowWidth * 0.32) - 2, static_cast<int>(windowHeight * 0.34) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &XborderRect);
+
+    SDL_Rect tic_tac_toe_X_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.34), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_position_X_texture, nullptr, &tic_tac_toe_X_rect);
+
+    // O button
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect OborderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.34) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &OborderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect OborderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.34) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &OborderRect);
+
+    SDL_Rect tic_tac_toe_O_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.34), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_position_O_texture, nullptr, &tic_tac_toe_O_rect);
+
+    /*
+
+        Starting player
+
+    */
 
     render_text("Starting player", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
 
@@ -508,8 +519,180 @@ void tic_tac_toe_draw_setup_game_popup_window()
 
     SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
     SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    /*
+
+        Play against
+
     
 
+   render_text("Play against", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
+
+    // player starts first
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingPlayerBorderLineRect = {static_cast<int>(windowWidth * 0.32) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingPlayerBorderRect = {static_cast<int>(windowWidth * 0.32) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderRect);
+
+    SDL_Rect tic_tac_toe_player_start_first_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_player_start_first_rect);
+
+    // Opponent starts first
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    */
+
+
+    /*
+
+        Rounds | Lives
+
+    */
+
+    
+
+
+    /*
+
+        Timer
+
+    
+
+    render_text("Timer", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
+
+    // 2 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingPlayerBorderLineRect = {static_cast<int>(windowWidth * 0.32) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingPlayerBorderRect = {static_cast<int>(windowWidth * 0.32) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderRect);
+
+    SDL_Rect tic_tac_toe_player_start_first_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_player_start_first_rect);
+
+    // 5 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingPlayerBorderLineRect = {static_cast<int>(windowWidth * 0.32) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingPlayerBorderRect = {static_cast<int>(windowWidth * 0.32) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderRect);
+
+    SDL_Rect tic_tac_toe_player_start_first_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_player_start_first_rect);
+
+    // 10 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingPlayerBorderLineRect = {static_cast<int>(windowWidth * 0.32) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingPlayerBorderRect = {static_cast<int>(windowWidth * 0.32) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingPlayerBorderRect);
+
+    SDL_Rect tic_tac_toe_player_start_first_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_player_start_first_rect);
+
+    // 15 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    // 20 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    // 30 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    // 60 seconds
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    // 120 seconds | 2 minutes
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    // 300 seconds | 5 minutes
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    // 600 seconds | 10 minutes
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255); // RGB: Black
+    SDL_Rect startingOpponentBorderLineRect = {static_cast<int>(windowWidth * 0.42) - 4, static_cast<int>(windowHeight * 0.54) - 4, (windowWidth / 18) + 8, (windowHeight / 18) + 8};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderLineRect);
+
+    SDL_SetRenderDrawColor(renderer, 192, 192, 192, 255); // RGB: Light grey
+    SDL_Rect startingOpponentBorderRect = {static_cast<int>(windowWidth * 0.42) - 2, static_cast<int>(windowHeight * 0.54) - 2, (windowWidth / 18) + 4, (windowHeight / 18) + 4};
+    SDL_RenderFillRect(renderer, &startingOpponentBorderRect);
+
+    SDL_Rect tic_tac_toe_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.54), (windowWidth / 18), (windowHeight / 18)};
+    SDL_RenderCopy(renderer, tic_tac_toe_starting_player_texture, nullptr, &tic_tac_toe_opponent_start_first_rect);
+
+    */
 }
 
 void tic_tac_toe_draw_X_or_O()
@@ -554,57 +737,6 @@ void tic_tac_toe_draw_settings_buttons()
 }
 
 // Tic Tac Toe - Updates
-void tic_tac_toe_update_new_game_reset_variables()
-{
-    tic_tac_toe_player_choice = 3;
-    tic_tac_toe_opponent_choice = 3;
-    tic_tac_toe_positions = {2, 2, 2, 2, 2, 2, 2, 2, 2};
-    tic_tac_toe_player_choose_x_or_o = false;
-    tic_tac_toe_winner = 0;
-    tic_tac_toe_game_over = false;
-    tic_tac_toe_opponentsTurn = false;
-    tic_tac_toe_showPopup = true;
-    tic_tac_toe_all_positions_available = true;
-
-    // Restart timer - generic function
-    timerRunning = false;
-    countdownStarted = false;
-    countdownSeconds = 10;
-}
-void tic_tac_toe_update_is_position_taken(int index)
-{
-    int gridPosition = index + 1;
-    std::string competitor = tic_tac_toe_opponentsTurn ? "Opponent" : "Player";
-
-    if (tic_tac_toe_positions[index] == 2)
-    {
-        int choice = (competitor == "Player") ? tic_tac_toe_player_choice : tic_tac_toe_opponent_choice;
-        tic_tac_toe_positions[index] = choice;
-
-        if (!tic_tac_toe_game_over)
-        {
-            tic_tac_toe_opponentsTurn = !tic_tac_toe_opponentsTurn;
-            if (tic_tac_toe_opponentsTurn)
-            {
-                SDL_Delay(1000);
-            }
-        }
-    }
-    else
-    {
-        std::cout << competitor << ", Position: " << gridPosition << " is taken. Try again." << std::endl;
-    }
-}
-void tic_tac_toe_update_ai_logic()
-{
-    while (tic_tac_toe_opponentsTurn)
-    {
-        int i = rand() % 9; // look for 0 - 8 only as tic_tac_toe_positions vector is from 0 - 8 (9 values)
-        int gridPosition = i + 1;
-        std::cout << "AI choose Position: " << gridPosition << std::endl;
-        tic_tac_toe_update_is_position_taken(i);
-    }
-}
 void tic_tac_toe_update_winning_logic()
 {
     /* Tic Tac Toe field positioning
@@ -657,24 +789,26 @@ void tic_tac_toe_update_winning_logic()
     }
 
     // Draw condition
-    if (!tic_tac_toe_showPopup) // If game has started
+    if (!tic_tac_toe_showPopup && !tic_tac_toe_game_over) // If game has started and not over (to not keep cout "it's a draw")
     {
+        bool tic_tac_toe_all_positions_used = true;
         for (int i = 0; i < tic_tac_toe_positions.size(); ++i)
         {
+            
             if (tic_tac_toe_positions[i] == 2) // Check for any empty position
             {
-                tic_tac_toe_all_positions_available = false; // no empty positions
+                tic_tac_toe_all_positions_used = false; // no empty positions
                 break;
             }
         }
 
-        if (tic_tac_toe_all_positions_available && tic_tac_toe_winner != 0 && tic_tac_toe_winner != 1)
+        if (tic_tac_toe_all_positions_used && tic_tac_toe_winner != 1 && tic_tac_toe_winner != 2)
         {
-            std::cout << "It's a Draw." << std::endl;
             toggle_countdown();
+            std::cout << "It's a Draw." << std::endl;
+            tic_tac_toe_opponentsTurn = false;
             tic_tac_toe_game_over = true;
             tic_tac_toe_winner = 3;
-            tic_tac_toe_opponentsTurn = false;
             Mix_PlayChannel(-1, loseGameSound, 0);
         }
     }
@@ -697,14 +831,57 @@ void tic_tac_toe_update_winning_logic()
         }
     }
 }
+void tic_tac_toe_update_new_game_reset_variables()
+{
+    tic_tac_toe_player_choice = 3;
+    tic_tac_toe_opponent_choice = 3;
+    tic_tac_toe_positions = {2, 2, 2, 2, 2, 2, 2, 2, 2};
+    tic_tac_toe_player_choose_x_or_o = false;
+    tic_tac_toe_winner = 0;
+    tic_tac_toe_game_over = false;
+    tic_tac_toe_opponentsTurn = false;
+    tic_tac_toe_showPopup = true;
+
+    // Restart timer - generic function
+    timerRunning = false;
+    countdownStarted = false;
+    countdownSeconds = 20;
+}
+void tic_tac_toe_update_is_position_taken(int index)
+{
+    int gridPosition = index + 1;
+    std::string competitor = tic_tac_toe_opponentsTurn ? "Opponent" : "Player";
+
+    if (tic_tac_toe_positions[index] == 2)
+    {
+        int choice = (competitor == "Player") ? tic_tac_toe_player_choice : tic_tac_toe_opponent_choice;
+        tic_tac_toe_positions[index] = choice;
+
+        tic_tac_toe_opponentsTurn = !tic_tac_toe_opponentsTurn;
+    }
+    else
+    {
+        std::cout << competitor << ", Position: " << gridPosition << " is taken. Try again." << std::endl;
+    }
+}
+void tic_tac_toe_update_ai_logic()
+{
+    while (tic_tac_toe_opponentsTurn)
+    {
+        int i = rand() % 9; // look for 0 - 8 only as tic_tac_toe_positions vector is from 0 - 8 (9 values)
+        int gridPosition = i + 1;
+        std::cout << "AI choose Position: " << gridPosition << std::endl;
+        tic_tac_toe_update_is_position_taken(i);
+    }
+}
 
 // Tic Tac Toe - Handles
 void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
 {
     SDL_Point mousePosition = {mouseX, mouseY};
 
-    SDL_Rect tic_tac_toe_X_rect = {static_cast<int>(windowWidth * 0.4), static_cast<int>(windowHeight * 0.5), (windowWidth / 10), (windowHeight / 10)};
-    SDL_Rect tic_tac_toe_O_rect = {static_cast<int>(windowWidth * 0.5), static_cast<int>(windowHeight * 0.5), (windowWidth / 10), (windowHeight / 10)};
+    SDL_Rect tic_tac_toe_X_rect = {static_cast<int>(windowWidth * 0.32), static_cast<int>(windowHeight * 0.34), (windowWidth / 18), (windowHeight / 18)};
+    SDL_Rect tic_tac_toe_O_rect = {static_cast<int>(windowWidth * 0.42), static_cast<int>(windowHeight * 0.34), (windowWidth / 18), (windowHeight / 18)};
 
     std::vector<SDL_Rect> positionRects = {
         {static_cast<int>(windowWidth * 0.25), static_cast<int>(windowHeight * 0.25), (windowWidth / 8), (windowHeight / 8)},
@@ -779,6 +956,7 @@ void tic_tac_toe_mouse_handle(int mouseX, int mouseY)
         std::cout << "You clicked: Restart Timer" << std::endl;
         toggle_countdown();
     }
+    // Timer buttons
 }
 void tic_tac_toe_keyboard_handle(SDL_Event event)
 {
@@ -845,6 +1023,7 @@ void tic_tac_toe_gamepad_handle(int button)
 {
 }
 
+
 // Tic Tac Toe - SDL Integration
 void tic_tac_toe_SDL_draw()
 {
@@ -853,6 +1032,7 @@ void tic_tac_toe_SDL_draw()
 
     // HUD Buttons
     draw_timer();
+    draw_lives(tic_tac_toe_choose_lives);
     tic_tac_toe_draw_settings_buttons();
     draw_win_frequency(tic_tac_toe_winner_history, tic_tac_toe_winner_choice_history);
     // draw_lives(game_uses_lives);
