@@ -97,7 +97,7 @@ std::vector<int> tic_tac_toe_winner_choice_history;
 bool tic_tac_toe_game_over = false;
 bool tic_tac_toe_opponentsTurn = false;
 bool tic_tac_toe_showPopup = true;
-int tic_tac_toe_choose_lives = 3;
+int tic_tac_toe_choose_lives = 0;
 int selectedOption = 0;    // For Keyboard arrow key or Gamepad d-pad selection
 int menuTotalOptions = 13; // For Keyboard arrow key or Gamepad d-pad selection
 
@@ -371,17 +371,17 @@ void draw_win_frequency(const std::vector<int> &winners, const std::vector<int> 
 void draw_lives(int lives)
 {
     int initialHeartX = static_cast<int>(windowWidth * 0.37); // Initial x-position for the first heart
-    int heartWidth = windowWidth / 26; // Width of each heart
-    int xHeartSpacing = 5; // Adjust this value for spacing between hearts
+    int heartWidth = windowWidth / 26;                        // Width of each heart
+    int xHeartSpacing = 5;                                    // Adjust this value for spacing between hearts
 
-    SDL_Rect heartRect = { initialHeartX, static_cast<int>(windowHeight * 0.15), heartWidth, heartWidth };
+    SDL_Rect heartRect = {initialHeartX, static_cast<int>(windowHeight * 0.15), heartWidth, heartWidth};
 
-    for (int i = 0; i < lives; i++) {
+    for (int i = 0; i < lives; i++)
+    {
         heartRect.x = initialHeartX + (heartWidth + xHeartSpacing) * i;
         SDL_RenderCopy(renderer, heartTexture, nullptr, &heartRect);
     }
 }
-
 
 // Tic Tac Toe - Draws
 void tic_tac_toe_load_textures()
@@ -524,7 +524,7 @@ void tic_tac_toe_draw_setup_game_popup_window()
 
         Play against
 
-    
+
 
    render_text("Play against", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
 
@@ -554,21 +554,17 @@ void tic_tac_toe_draw_setup_game_popup_window()
 
     */
 
-
     /*
 
         Rounds | Lives
 
     */
 
-    
-
-
     /*
 
         Timer
 
-    
+
 
     render_text("Timer", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.44));
 
@@ -694,7 +690,6 @@ void tic_tac_toe_draw_setup_game_popup_window()
 
     */
 }
-
 void tic_tac_toe_draw_X_or_O()
 {
     std::vector<SDL_Rect> positionRects = {
@@ -737,6 +732,69 @@ void tic_tac_toe_draw_settings_buttons()
 }
 
 // Tic Tac Toe - Updates
+std::vector<int> tic_tac_toe_update_ai_check_available_moves(std::vector<int> &tic_tac_toe_positions)
+{
+    /*
+        A vector function that accepts the 9 int vector postitions
+        finds any available spaces and returns them;
+    */
+    std::vector<int> moves;
+    for (int i = 0; i < tic_tac_toe_positions.size(); ++i)
+    {
+        if (tic_tac_toe_positions[i] == 2)
+        {
+            moves.push_back(i);
+        }
+    }
+    return moves;
+}
+int tic_tac_toe_update_possible_winning_moves(std::vector<int> tic_tac_toe_positions, int player)
+{
+    for (int i = 0; i < tic_tac_toe_positions.size(); ++i)
+    {
+        if (tic_tac_toe_positions[i] == 2)
+        {
+            std::vector<int> tic_tac_toe_positions_test = tic_tac_toe_positions;
+            tic_tac_toe_positions_test[i] = player; // pretend this free space on board is any player
+
+            for (int j = 0; j < 3; ++j)
+            {
+            }
+        }
+    }
+
+    return -1;
+}
+int tic_tac_toe_update_ai_movement(std::vector<int> tic_tac_toe_positions, int tic_tac_toe_opponent_choice, int tic_tac_toe_player_choice)
+{
+    /*
+        Check for winning moves for the AI and Player
+        the priority of movement will be
+        1. Winning move for AI
+        2. Blocking player from winning
+        3. Make a random move if neither above condition is true
+    */
+
+    int aiWinningMove = tic_tac_toe_update_possible_winning_moves(tic_tac_toe_positions, tic_tac_toe_opponent_choice); // AI check winning moves
+    if (aiWinningMove != -1)
+    {
+        return aiWinningMove;
+    }
+
+    int humanWinningMove = tic_tac_toe_update_possible_winning_moves(tic_tac_toe_positions, tic_tac_toe_player_choice); // Human check winning moves
+    if (humanWinningMove != -1)
+    {
+        return humanWinningMove;
+    }
+
+    std::vector<int> moves = tic_tac_toe_update_ai_check_available_moves(tic_tac_toe_positions);
+    if (!moves.empty())
+    {
+        return moves[rand() % moves.size()];
+    }
+
+    return -1;
+}
 void tic_tac_toe_update_winning_logic()
 {
     /* Tic Tac Toe field positioning
@@ -794,7 +852,7 @@ void tic_tac_toe_update_winning_logic()
         bool tic_tac_toe_all_positions_used = true;
         for (int i = 0; i < tic_tac_toe_positions.size(); ++i)
         {
-            
+
             if (tic_tac_toe_positions[i] == 2) // Check for any empty position
             {
                 tic_tac_toe_all_positions_used = false; // no empty positions
@@ -868,10 +926,11 @@ void tic_tac_toe_update_ai_logic()
 {
     while (tic_tac_toe_opponentsTurn)
     {
-        int i = rand() % 9; // look for 0 - 8 only as tic_tac_toe_positions vector is from 0 - 8 (9 values)
-        int gridPosition = i + 1;
-        std::cout << "AI choose Position: " << gridPosition << std::endl;
-        tic_tac_toe_update_is_position_taken(i);
+        int aiMoveIndex = tic_tac_toe_update_ai_movement(tic_tac_toe_positions, tic_tac_toe_opponent_choice, tic_tac_toe_player_choice);
+        if (aiMoveIndex != -1)
+        {
+            tic_tac_toe_update_is_position_taken(aiMoveIndex);
+        }
     }
 }
 
@@ -1022,7 +1081,6 @@ void tic_tac_toe_keyboard_handle(SDL_Event event)
 void tic_tac_toe_gamepad_handle(int button)
 {
 }
-
 
 // Tic Tac Toe - SDL Integration
 void tic_tac_toe_SDL_draw()

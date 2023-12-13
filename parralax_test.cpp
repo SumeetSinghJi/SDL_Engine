@@ -78,6 +78,22 @@ void run_SDL() {
         while (SDL_PollEvent(&e) != 0) {
             if (e.type == SDL_QUIT) {
                 quit = true;
+            } else if (e.type == SDL_MOUSEMOTION) {
+                int mouseX = e.motion.x;
+                int mouseY = e.motion.y;
+
+                // Adjust offsetX and offsetY based on mouse position to simulate scrolling
+                if (mouseX < 0) {
+                    offsetX += 10;  // Scroll left
+                } else if (mouseX > SCREEN_WIDTH) {
+                    offsetX -= 10;  // Scroll right
+                }
+
+                if (mouseY < 0) {
+                    offsetY += 10;  // Scroll up
+                } else if (mouseY > SCREEN_HEIGHT) {
+                    offsetY -= 10;  // Scroll down
+                }
             }
         }
 
@@ -86,6 +102,7 @@ void run_SDL() {
         SDL_RenderPresent(renderer);
     }
 }
+
 
 void closeSDL() {
     SDL_DestroyTexture(backgroundImage);

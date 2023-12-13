@@ -69,7 +69,9 @@
             "xutility": "cpp",
             "filesystem": "cpp",
             "fstream": "cpp",
-            "list": "cpp"
+            "list": "cpp",
+            "set": "cpp",
+            "xtree": "cpp"
         }
     }
 }
