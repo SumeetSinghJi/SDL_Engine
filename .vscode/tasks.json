@@ -12,7 +12,8 @@
                 "-I./src/SDL2_Mixer/x86_64-w64-mingw32/include/SDL2", // SDL2 Mixer header folder
                 "-I./src/SDL2_TTF/x86_64-w64-mingw32/include/SDL2", // SDL2 TTF header folder
                 "-g",
-                "${file}",
+                "${file}", // uncomment for only building main.cpp
+                // "${fileDirname}/*.cpp", // uncomment for combining all .cpp files
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
 				"-L./src/SDL2/x86_64-w64-mingw32/lib", // SDL2 lib folder
