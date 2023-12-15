@@ -11,20 +11,14 @@
 
 /*
     To DO - Tic Tac Toe
-    * Instead of drawing borderLineRect, why not use a ButtonTexture? find one on the internet
     * Test update function - render text
     * Test save function - render text - game saved
     * Test load function - render text - game saved
     * Learn sprite sheets, possibly use for numbers
     * Test CMAKE with libzip and curl
-    *   Popup expand vertically lower
-    *   Popup only appears when lives are 0; advising who won round
-    *   Play against: Computer | Human
-    *   Countdown timer, 10, 15, 20, 30, 60, 120, custom
-    *   Lives 1, 2, 3, 5, 10, custom
+    * Fix lives function
     * ChatGPT - History, Rules, Trivia
     * on Win draw line
-    * Draw lives
     * Google Test
     * Parralex background with settings toggle
     * voice acting
@@ -93,7 +87,12 @@ SDL_Texture *frequencyTexture = nullptr; // In game - frequency box
 SDL_Texture *helpTexture = nullptr;      // In game - frequency box
 SDL_Texture *settingsTexture = nullptr;  // In game - frequency box
 SDL_Texture *worldMapTexture = nullptr;  // In game - frequency box
-SDL_Texture *heartTexture = nullptr;     // In game - hearts representing lives if game uses lives
+SDL_Texture *heartTexture = nullptr;     // In game - Rounds
+SDL_Texture *hearts2Texture = nullptr;     // In game - Rounds
+SDL_Texture *hearts3Texture = nullptr;     // In game - Rounds
+SDL_Texture *hearts4Texture = nullptr;     // In game - Rounds
+SDL_Texture *hearts5Texture = nullptr;     // In game - Rounds
+SDL_Texture *hearts10Texture = nullptr;     // In game - Rounds
 
 // Tic Tac Toe - Global variables
 int ttt_ROWS = 3;                                             // Core Logic - for drawing 9 grid array
@@ -219,21 +218,6 @@ SDL_Texture *load_texture(const char *path, const char *name)
     }
     return texture;
 }
-void load_textures()
-{
-    // Splash screen
-    splashScreenTexture = load_texture("assets/graphics/backgrounds/AgniSamooh-HD-logo.png", "Developer Splash screen");
-
-    // HUD textures
-    restartTexture = load_texture("assets/graphics/buttons/settings/restart-button.png", "Restart Button");
-    timerTexture = load_texture("assets/graphics/HUD/timer.png", "Timer Button");
-    heartTexture = load_texture("assets/graphics/HUD/heart.png", "Heart");
-    frequencyTexture = load_texture("assets/graphics/HUD/frequency.png", "Frequency");
-
-    // Popup texture
-    humanTexture = load_texture("assets/graphics/HUD/human-button.png", "Human");
-    computerTexture = load_texture("assets/graphics/HUD/computer-button.png", "Computer");
-}
 void start_SDL()
 {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0)
@@ -287,7 +271,7 @@ void start_SDL()
         return;
     }
     load_fonts();
-    load_textures();
+    ttt_load_textures();
     ttt_load_textures();
     load_music(songTitle);
     load_sound();
@@ -414,7 +398,15 @@ void ttt_load_textures()
     ttt_position_O_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_O_texture.png", "Tic Tac Toe O image");
     ttt_position_line_texture = load_texture("assets/graphics/games/tic_tac_toe/tic_tac_toe_line_texture.png", "Tic Tac Toe Line image");
     buttonTexture = load_texture("assets/graphics/buttons/boxes/button.png", "Button");
+    humanTexture = load_texture("assets/graphics/buttons/settings/human-button.png", "Human");
+    computerTexture = load_texture("assets/graphics/buttons/settings/computer-button.png", "Computer");
     romeDayBackgroundTexture = load_texture("assets/graphics/backgrounds/rome-day.jpg", "Rome Day Background");
+    heartTexture = load_texture("assets/graphics/HUD/heart.png", "Heart");
+    hearts2Texture = load_texture("assets/graphics/HUD/2hearts.png", "2 Hearts");
+    hearts3Texture = load_texture("assets/graphics/HUD/3hearts.png", "3 Hearts");
+    hearts4Texture = load_texture("assets/graphics/HUD/4hearts.png", "4 Hearts");
+    hearts5Texture = load_texture("assets/graphics/HUD/5hearts.png", "5 Hearts");
+    hearts10Texture = load_texture("assets/graphics/HUD/10hearts.png", "10 Hearts");
 }
 void ttt_draw_field()
 {
@@ -611,14 +603,23 @@ void ttt_draw_setup_game_popup_window()
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &heartRounds3ButtonRect);
 
     SDL_Rect heartRounds3Rect = {static_cast<int>(windowWidth * 0.36), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, heartTexture, nullptr, &heartRounds3Rect);
+    SDL_RenderCopy(renderer, hearts3Texture, nullptr, &heartRounds3Rect);
 
     // 5 Rounds
     SDL_Rect heartRounds5ButtonRect = {static_cast<int>(windowWidth * 0.46) - buttonXOffset, static_cast<int>(windowHeight * 0.72) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &heartRounds5ButtonRect);
 
     SDL_Rect heartRounds5Rect = {static_cast<int>(windowWidth * 0.46), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, heartTexture, nullptr, &heartRounds5Rect);
+    SDL_RenderCopy(renderer, hearts5Texture, nullptr, &heartRounds5Rect);
+
+    // 10 Rounds
+    SDL_Rect heartRounds10ButtonRect = {static_cast<int>(windowWidth * 0.56) - buttonXOffset, static_cast<int>(windowHeight * 0.72) - buttonYOffset, buttonWidth, buttonHeight};
+    SDL_RenderCopy(renderer, buttonTexture, nullptr, &heartRounds10ButtonRect);
+
+    SDL_Rect heartRounds10Rect = {static_cast<int>(windowWidth * 0.56), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
+    SDL_RenderCopy(renderer, hearts10Texture, nullptr, &heartRounds10Rect);
+
+
 
     /*
 
@@ -983,6 +984,7 @@ void ttt_mouse_handle(int mouseX, int mouseY)
     SDL_Rect heartRounds1Rect = {static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
     SDL_Rect heartRounds3Rect = {static_cast<int>(windowWidth * 0.36), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
     SDL_Rect heartRounds5Rect = {static_cast<int>(windowWidth * 0.46), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
+    SDL_Rect heartRounds10Rect = {static_cast<int>(windowWidth * 0.56) - buttonXOffset, static_cast<int>(windowHeight * 0.72) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_Rect seconds10Rect = {static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
     SDL_Rect seconds30Rect = {static_cast<int>(windowWidth * 0.31), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
     SDL_Rect seconds60Rect = {static_cast<int>(windowWidth * 0.36), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
@@ -1094,6 +1096,12 @@ void ttt_mouse_handle(int mouseX, int mouseY)
                 ttt_choose_rounds = true;
                 ttt_rounds = 5;
             }
+            else if (SDL_PointInRect(&mousePosition, &heartRounds10Rect))
+            {
+                std::cout << "You choose: Play 10 rounds" << std::endl;
+                ttt_choose_rounds = true;
+                ttt_rounds = 10;
+            }
             else if (SDL_PointInRect(&mousePosition, &seconds10Rect))
             {
                 std::cout << "You choose: 10 second timer" << std::endl;
@@ -1138,6 +1146,7 @@ void ttt_mouse_handle(int mouseX, int mouseY)
             }
         }
     }
+    
     // Settings -  Buttons
     if (SDL_PointInRect(&mousePosition, &restartRect))
     {
@@ -1362,6 +1371,11 @@ void exit_SDL()
     SDL_DestroyTexture(timerTexture);
     SDL_DestroyTexture(frequencyTexture);
     SDL_DestroyTexture(heartTexture);
+    SDL_DestroyTexture(hearts2Texture);
+    SDL_DestroyTexture(hearts3Texture);
+    SDL_DestroyTexture(hearts4Texture);
+    SDL_DestroyTexture(hearts5Texture);
+    SDL_DestroyTexture(hearts10Texture);
     SDL_DestroyTexture(helpTexture);
     SDL_DestroyTexture(settingsTexture);
     SDL_DestroyTexture(worldMapTexture);
