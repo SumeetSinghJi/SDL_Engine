@@ -11,6 +11,8 @@
                 "-I./src/SDL2_image/x86_64-w64-mingw32/include/SDL2", // SDL2 Image header folder
                 "-I./src/SDL2_Mixer/x86_64-w64-mingw32/include/SDL2", // SDL2 Mixer header folder
                 "-I./src/SDL2_TTF/x86_64-w64-mingw32/include/SDL2", // SDL2 TTF header folder
+                "-I./src/curl/include", // libcurl
+                "-I./src/libzip", // libzib
                 "-g",
                 "${file}", // uncomment for only building main.cpp
                 // "${fileDirname}/*.cpp", // uncomment for combining all .cpp files
@@ -20,6 +22,10 @@
                 "-L./src/SDL2_Image/x86_64-w64-mingw32/lib", // SDL2 Image lib folder
                 "-L./src/SDL2_Mixer/x86_64-w64-mingw32/lib", // SDL2 Mixer lib folder
                 "-L./src/SDL2_TTF/x86_64-w64-mingw32/lib", // SDL2 TTF lib folder
+                "-L./src/curl/lib", // libcurl
+                "-L./src/libzip", // libzib
+                "-lzip", // libzib
+                "-lcurl", // libcurl
 				"-lmingw32", // MingW compiler library found here C:\msys64\mingw64\lib\libmingw32.a
 				"-lSDL2main", // SDL2 library
 				"-lSDL2", // SDL2 library

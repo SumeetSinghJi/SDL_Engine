@@ -11,16 +11,16 @@
 
 /*
     To DO - Tic Tac Toe
+    * For popup time - slider texture background + 1 for button then create drag logic
     * Test update function - render text
-    * Test save function - render text - game saved
-    * Test load function - render text - game saved
-    * Learn sprite sheets, possibly use for numbers
     * Test CMAKE with libzip and curl
     * Fix lives function
+    * Win Fireworks animation
     * ChatGPT - History, Rules, Trivia
     * on Win draw line
     * Google Test
-    * Parralex background with settings toggle
+    * Parralex background for world map, go around the globe, with settings toggle
+    * Secret hidden clickable scene
     * voice acting
     * keyboard handles
     * gamepad handles
@@ -76,9 +76,9 @@ SDL_Texture *computerTexture = nullptr;
 SDL_Texture *buttonTexture = nullptr; // Popup - button texture
 
 // Tic Tac Toe - Textures
-SDL_Texture *ttt_position_X_texture;
-SDL_Texture *ttt_position_O_texture;
-SDL_Texture *ttt_position_line_texture;
+SDL_Texture *xTexture;
+SDL_Texture *oTexture;
+SDL_Texture *lineTexture;
 
 // HUD textures
 SDL_Texture *restartTexture = nullptr;   // In game - restart game button
@@ -88,11 +88,11 @@ SDL_Texture *helpTexture = nullptr;      // In game - frequency box
 SDL_Texture *settingsTexture = nullptr;  // In game - frequency box
 SDL_Texture *worldMapTexture = nullptr;  // In game - frequency box
 SDL_Texture *heartTexture = nullptr;     // In game - Rounds
-SDL_Texture *hearts2Texture = nullptr;     // In game - Rounds
-SDL_Texture *hearts3Texture = nullptr;     // In game - Rounds
-SDL_Texture *hearts4Texture = nullptr;     // In game - Rounds
-SDL_Texture *hearts5Texture = nullptr;     // In game - Rounds
-SDL_Texture *hearts10Texture = nullptr;     // In game - Rounds
+SDL_Texture *hearts2Texture = nullptr;   // In game - Rounds
+SDL_Texture *hearts3Texture = nullptr;   // In game - Rounds
+SDL_Texture *hearts4Texture = nullptr;   // In game - Rounds
+SDL_Texture *hearts5Texture = nullptr;   // In game - Rounds
+SDL_Texture *hearts10Texture = nullptr;  // In game - Rounds
 
 // Tic Tac Toe - Global variables
 int ttt_ROWS = 3;                                             // Core Logic - for drawing 9 grid array
@@ -394,9 +394,10 @@ void draw_lives(int lives)
 // Tic Tac Toe - Draws
 void ttt_load_textures()
 {
-    ttt_position_X_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_X_texture.png", "Tic Tac Toe X image");
-    ttt_position_O_texture = load_texture("assets/graphics/games/tic_tac_toe/buttons/tic_tac_toe_O_texture.png", "Tic Tac Toe O image");
-    ttt_position_line_texture = load_texture("assets/graphics/games/tic_tac_toe/tic_tac_toe_line_texture.png", "Tic Tac Toe Line image");
+    xTexture = load_texture("assets/graphics/buttons/popup/x.png", "Tic Tac Toe X image");
+    oTexture = load_texture("assets/graphics/buttons/popup/o.png", "Tic Tac Toe O image");
+    lineTexture = load_texture("assets/graphics/hud/line.png", "Tic Tac Toe Line image");
+    restartTexture = load_texture("assets/graphics/buttons/settings/restart-button.png", "Restart");
     buttonTexture = load_texture("assets/graphics/buttons/boxes/button.png", "Button");
     humanTexture = load_texture("assets/graphics/buttons/settings/human-button.png", "Human");
     computerTexture = load_texture("assets/graphics/buttons/settings/computer-button.png", "Computer");
@@ -464,7 +465,7 @@ void ttt_draw_setup_game_popup_window()
 
     // close button
     SDL_Rect closeButtonRect = {static_cast<int>(windowWidth * 0.68), static_cast<int>(windowHeight * 0.2), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_X_texture, nullptr, &closeButtonRect);
+    SDL_RenderCopy(renderer, xTexture, nullptr, &closeButtonRect);
 
     /*
 
@@ -494,14 +495,14 @@ void ttt_draw_setup_game_popup_window()
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &ttt_XbuttonRect);
 
     SDL_Rect ttt_X_rect = {static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.26), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_X_texture, nullptr, &ttt_X_rect);
+    SDL_RenderCopy(renderer, xTexture, nullptr, &ttt_X_rect);
 
     // Button - for choose O
     SDL_Rect ttt_ObuttonRect = {static_cast<int>(windowWidth * 0.36) - buttonXOffset, static_cast<int>(windowHeight * 0.26) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &ttt_ObuttonRect);
 
     SDL_Rect ttt_O_rect = {static_cast<int>(windowWidth * 0.36), static_cast<int>(windowHeight * 0.26), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &ttt_O_rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &ttt_O_rect);
 
     /*
 
@@ -530,14 +531,14 @@ void ttt_draw_setup_game_popup_window()
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &ttt_player_start_first_button_Rect);
 
     SDL_Rect ttt_player_start_first_rect = {static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.40), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_X_texture, nullptr, &ttt_player_start_first_rect);
+    SDL_RenderCopy(renderer, xTexture, nullptr, &ttt_player_start_first_rect);
 
     // Opponent starts first
     SDL_Rect ttt_opponent_start_first_button_Rect = {static_cast<int>(windowWidth * 0.36) - buttonXOffset, static_cast<int>(windowHeight * 0.40) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &ttt_opponent_start_first_button_Rect);
 
     SDL_Rect ttt_opponent_start_first_rect = {static_cast<int>(windowWidth * 0.36), static_cast<int>(windowHeight * 0.40), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &ttt_opponent_start_first_rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &ttt_opponent_start_first_rect);
 
     /*
 
@@ -619,73 +620,76 @@ void ttt_draw_setup_game_popup_window()
     SDL_Rect heartRounds10Rect = {static_cast<int>(windowWidth * 0.56), static_cast<int>(windowHeight * 0.72), rectWidth, rectHeight};
     SDL_RenderCopy(renderer, hearts10Texture, nullptr, &heartRounds10Rect);
 
-
-
     /*
 
         Timer
 
     */
 
-   if (!ttt_timer_set)
+    if (!ttt_timer_set)
     {
         render_text("Timer: 10s, 30s, 1m, 5m, 10m, 30m, 1hr, custom (s) ", static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.82));
     }
     else
     {
-        std::string renderTimer = "You choose: " + std::to_string(countdownSeconds) + " seconds";
+        int hours = countdownSeconds / 3600;
+        int remainingSecondsAfterHours = countdownSeconds % 3600;
+        int minutes = remainingSecondsAfterHours / 60;
+        int seconds = remainingSecondsAfterHours % 60;
+        std::string renderTimer = "You chose: " + std::to_string(hours) + " h, " +
+            std::to_string(minutes) + " m, " +
+            std::to_string(seconds) + " s";
         render_text(renderTimer, static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.82));
     }
 
-    
     // 10 seconds
     SDL_Rect seconds10ButtonRect = {static_cast<int>(windowWidth * 0.26) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds10ButtonRect);
 
     SDL_Rect seconds10Rect = {static_cast<int>(windowWidth * 0.26), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds10Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds10Rect);
 
     // 30 seconds
     SDL_Rect seconds30ButtonRect = {static_cast<int>(windowWidth * 0.31) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds30ButtonRect);
 
     SDL_Rect seconds30Rect = {static_cast<int>(windowWidth * 0.31), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds30Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds30Rect);
 
     // 1 minute
     SDL_Rect seconds60ButtonRect = {static_cast<int>(windowWidth * 0.36) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds60ButtonRect);
 
     SDL_Rect seconds60Rect = {static_cast<int>(windowWidth * 0.36), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds60Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds60Rect);
 
     // 5 minute
     SDL_Rect seconds300ButtonRect = {static_cast<int>(windowWidth * 0.41) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds300ButtonRect);
 
     SDL_Rect seconds300Rect = {static_cast<int>(windowWidth * 0.41), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds300Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds300Rect);
 
     // 10 minute
     SDL_Rect seconds600ButtonRect = {static_cast<int>(windowWidth * 0.46) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds600ButtonRect);
 
     SDL_Rect seconds600Rect = {static_cast<int>(windowWidth * 0.46), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds600Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds600Rect);
 
     // 30 minute
     SDL_Rect seconds1800ButtonRect = {static_cast<int>(windowWidth * 0.51) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds1800ButtonRect);
 
     SDL_Rect seconds1800Rect = {static_cast<int>(windowWidth * 0.51), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds1800Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds1800Rect);
 
     // 1 hour
     SDL_Rect seconds3600ButtonRect = {static_cast<int>(windowWidth * 0.56) - buttonXOffset, static_cast<int>(windowHeight * 0.88) - buttonYOffset, buttonWidth, buttonHeight};
     SDL_RenderCopy(renderer, buttonTexture, nullptr, &seconds3600ButtonRect);
 
     SDL_Rect seconds3600Rect = {static_cast<int>(windowWidth * 0.56), static_cast<int>(windowHeight * 0.88), rectWidth, rectHeight};
-    SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &seconds3600Rect);
+    SDL_RenderCopy(renderer, oTexture, nullptr, &seconds3600Rect);
 }
 void ttt_draw_X_or_O()
 {
@@ -703,11 +707,11 @@ void ttt_draw_X_or_O()
     {
         if (ttt_positions[i] == 0)
         {
-            SDL_RenderCopy(renderer, ttt_position_O_texture, nullptr, &positionRects[i]);
+            SDL_RenderCopy(renderer, oTexture, nullptr, &positionRects[i]);
         }
         else if (ttt_positions[i] == 1)
         {
-            SDL_RenderCopy(renderer, ttt_position_X_texture, nullptr, &positionRects[i]);
+            SDL_RenderCopy(renderer, xTexture, nullptr, &positionRects[i]);
         }
         else if (ttt_positions[i] == 2)
         {
@@ -1146,7 +1150,7 @@ void ttt_mouse_handle(int mouseX, int mouseY)
             }
         }
     }
-    
+
     // Settings -  Buttons
     if (SDL_PointInRect(&mousePosition, &restartRect))
     {
@@ -1228,6 +1232,17 @@ void ttt_gamepad_handle(int button)
 }
 
 // Tic Tac Toe - SDL Integration
+void ttt_SDL_update()
+{
+    ttt_update_winning_logic();
+    if (!ttt_play_against_human && ttt_choose_human_or_computer)
+    {
+        ttt_update_ai_logic();
+    }
+    ttt_update_winning_logic();
+    songTitle = "assets/sounds/music/Old Rome - PianoAmor.mp3";
+    load_music(songTitle);
+}
 void ttt_SDL_draw()
 {
     SDL_RenderCopy(renderer, romeDayBackgroundTexture, NULL, NULL);
@@ -1263,23 +1278,12 @@ void ttt_SDL_draw()
         render_text("It's a Draw.", static_cast<int>(windowWidth * 0.35), static_cast<int>(windowHeight * 0.8));
     }
 }
-void ttt_SDL_update()
-{
-    ttt_update_winning_logic();
-    if (!ttt_play_against_human)
-    {
-        ttt_update_ai_logic();
-    }
-    ttt_update_winning_logic();
-    songTitle = "assets/sounds/music/Old Rome - PianoAmor.mp3";
-    load_music(songTitle);
-}
 void ttt_SDL_cleanup()
 {
     // ttt_textures
-    SDL_DestroyTexture(ttt_position_X_texture);
-    SDL_DestroyTexture(ttt_position_O_texture);
-    SDL_DestroyTexture(ttt_position_line_texture);
+    SDL_DestroyTexture(xTexture);
+    SDL_DestroyTexture(oTexture);
+    SDL_DestroyTexture(lineTexture);
 }
 
 // main.cpp SDL - loop
@@ -1363,9 +1367,9 @@ void exit_SDL()
     SDL_DestroyTexture(splashScreenTexture);
 
     // ttt_textures
-    SDL_DestroyTexture(ttt_position_X_texture);
-    SDL_DestroyTexture(ttt_position_O_texture);
-    SDL_DestroyTexture(ttt_position_line_texture);
+    SDL_DestroyTexture(xTexture);
+    SDL_DestroyTexture(oTexture);
+    SDL_DestroyTexture(lineTexture);
 
     // HUD Buttons
     SDL_DestroyTexture(timerTexture);
