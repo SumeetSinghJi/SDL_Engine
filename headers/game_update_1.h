@@ -10,6 +10,10 @@
 #include <cstdio>
 #ifdef _WIN32
     #include <winsock2.h> // For curling on Windows
+#elif __UNIX
+    #include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <arpa/inet.h>
 #endif
 #include "headers/game_update_2.h"
 
@@ -84,7 +88,7 @@ std::string set_curl_executable_or_bin_path()
     {
         filepath_separator = '/';
         home_directory = getenv("HOME"); // linux and macOS use HOME for the home directory
-        // curl_path = std::string(home_directory) + filepath_separator + "world-games" + filepath_separator + "curl" + filepath_separator + "bin" + filepath_separator + "curl";
+        curl_path = std::string(home_directory) + filepath_separator + "world-games" + filepath_separator + "curl" + filepath_separator + "bin" + filepath_separator + "curl";
     }
     else
     {

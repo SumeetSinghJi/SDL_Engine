@@ -7,6 +7,8 @@
                 "${workspaceFolder}/src/SDL2_Image/x86_64-w64-mingw32/include/SDL2",
                 "${workspaceFolder}/src/SDL2_Mixer/x86_64-w64-mingw32/include/SDL2",
                 "${workspaceFolder}/src/SDL2_TTF/x86_64-w64-mingw32/include/SDL2",
+                "${workspaceFolder}/src/curl/include",
+                "${workspaceFolder}/src/libzip"
             ],
             "defines": [
                 "_DEBUG",

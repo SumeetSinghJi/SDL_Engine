@@ -8,6 +8,8 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <SDL_mixer.h>
+#include "headers/game_update_1.h"
+#include "headers/game_update_1.h"
 
 /*
     To DO - Tic Tac Toe
@@ -15,7 +17,7 @@
     * Test update function - render text
     * Test CMAKE with libzip and curl
     * Fix lives function
-    * Win Fireworks animation
+    * AI video create Win animation
     * ChatGPT - History, Rules, Trivia
     * on Win draw line
     * Google Test
@@ -53,7 +55,7 @@ SDL_Texture *romeDayBackgroundTexture = nullptr; // scene 32
 bool isMusicPlaying = NULL;
 std::string currentSong = "";                                                 // for music
 std::string songTitle = "assets/sounds/music/8 bit dream land - Pixabay.mp3"; // for music
-
+std::string os_version = "";
 int windowWidth = 1200;
 int windowHeight = 800;
 bool quit = false;
@@ -79,6 +81,9 @@ SDL_Texture *buttonTexture = nullptr; // Popup - button texture
 SDL_Texture *xTexture;
 SDL_Texture *oTexture;
 SDL_Texture *lineTexture;
+
+// Update button
+SDL_Texture *updateTexture = nullptr;
 
 // HUD textures
 SDL_Texture *restartTexture = nullptr;   // In game - restart game button
@@ -304,6 +309,21 @@ void toggle_countdown()
         timerRunning = false; // Stop the countdown when toggled off
     }
 }
+std::string find_os()
+{
+    const char *char_osVersion = SDL_GetPlatform();
+    os_version = char_osVersion;
+    if (char_osVersion != NULL)
+    {
+        std::cout << "Host operating system: " << char_osVersion << std::endl;
+    }
+    else
+    {
+        std::cerr << "Failed to detect the host operating system." << std::endl;
+    }
+    return os_version;
+}
+
 
 // main.cpp HUD Functions
 void draw_timer(int countdownSeconds)
@@ -1371,6 +1391,9 @@ void exit_SDL()
     SDL_DestroyTexture(oTexture);
     SDL_DestroyTexture(lineTexture);
 
+    // Update button
+    SDL_DestroyTexture(updateTexture);
+
     // HUD Buttons
     SDL_DestroyTexture(timerTexture);
     SDL_DestroyTexture(frequencyTexture);
@@ -1412,6 +1435,8 @@ void exit_SDL()
 int main(int argc, char *argv[])
 {
     srand(static_cast<unsigned int>(time(0))); // Seed the random number generator using the current time
+
+    find_os();
 
     start_SDL();
     run_SDL();

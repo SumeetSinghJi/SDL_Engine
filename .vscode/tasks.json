@@ -32,6 +32,7 @@
 				"-lSDL2_image", // SDL Image
 				"-lSDL2_ttf", // SDL TTF
 				"-lSDL2_mixer", // SDL Mixer
+                "-lws2_32" // for #include <Winsock.2> // not needed unless creating a web server DEV ONLY
 				// "-mwindows" // for removing cmd when .exe is run, for final release only
             ],
             "options": {
