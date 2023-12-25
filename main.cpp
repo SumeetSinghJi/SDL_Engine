@@ -14,6 +14,7 @@
 /*
     To DO - Tic Tac Toe
     * For popup time - slider texture background + 1 for button then create drag logic
+    * Keyboard selection fix
     * Test update function - render text
     * Test CMAKE with libzip and curl
     * Fix lives function
@@ -21,8 +22,10 @@
     * ChatGPT - History, Rules, Trivia
     * on Win draw line
     * Google Test
-    * Parralex background for world map, go around the globe, with settings toggle
-    * Secret hidden clickable scene
+    * Parralex background for world map
+    * Secret hidden clickable scene, appears only after unlocking all other scenes, is a space game
+    * Save game file for unlocked scenes, and achievements
+    * Leaderboard scene reads from leaderboard website
     * voice acting
     * keyboard handles
     * gamepad handles

@@ -9,10 +9,6 @@
 #include <string>
 
 /* TO DO
- * index.html
- * error.html
- * leaderboard.html
- * robots.txt
  * input validation - prevent SQL injection, buffer overflow, XSS attacks
  * limit buffer sizes
  * secure socket operations
