@@ -13,20 +13,24 @@
 
 /*
     To DO - Tic Tac Toe
+    * 
+    * Tic Tac Toe - Keyboard selection in Game field. Important as template for every other game
     * For popup time - slider texture background + 1 for button then create drag logic
     * Keyboard selection fix
-    * Test update function - render text
+    * Fix Win history
+    * Test update function - render text into a popup
     * Test CMAKE with libzip and curl
     * Fix lives function
-    * AI video create Win animation
-    * ChatGPT - History, Rules, Trivia
+    * test win animation
+    * Readme read file
+    * Practice unit testing, then do it for next project senet
     * on Win draw line
+    * ChatGPT a simple .exe then reverse engineer it
     * Google Test
     * Parralex background for world map
     * Secret hidden clickable scene, appears only after unlocking all other scenes, is a space game
     * Save game file for unlocked scenes, and achievements
     * Leaderboard scene reads from leaderboard website
-    * voice acting
     * keyboard handles
     * gamepad handles
 */
@@ -973,6 +977,7 @@ void ttt_update_ai_logic()
         }
     }
 }
+
 
 // Tic Tac Toe - Handles
 void ttt_mouse_handle(int mouseX, int mouseY)

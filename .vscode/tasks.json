@@ -7,33 +7,39 @@
             "args": [
                 "-fdiagnostics-color=always",
                 "-I${fileDirname}",
-				"-I./src/SDL2/x86_64-w64-mingw32/include/SDL2", // SDL2 header folder
+                "-I./src/SDL2/x86_64-w64-mingw32/include/SDL2", // SDL2 header folder
                 "-I./src/SDL2_image/x86_64-w64-mingw32/include/SDL2", // SDL2 Image header folder
                 "-I./src/SDL2_Mixer/x86_64-w64-mingw32/include/SDL2", // SDL2 Mixer header folder
                 "-I./src/SDL2_TTF/x86_64-w64-mingw32/include/SDL2", // SDL2 TTF header folder
                 "-I./src/curl/include", // libcurl
                 "-I./src/libzip", // libzib
+                "-I./src/googletest/googletest/include/gtest", // Google Test
                 "-g",
                 "${file}", // uncomment for only building main.cpp
                 // "${fileDirname}/*.cpp", // uncomment for combining all .cpp files
                 "-o",
                 "${fileDirname}\\${fileBasenameNoExtension}.exe",
-				"-L./src/SDL2/x86_64-w64-mingw32/lib", // SDL2 lib folder
+                "-L./src/SDL2/x86_64-w64-mingw32/lib", // SDL2 lib folder
                 "-L./src/SDL2_Image/x86_64-w64-mingw32/lib", // SDL2 Image lib folder
                 "-L./src/SDL2_Mixer/x86_64-w64-mingw32/lib", // SDL2 Mixer lib folder
                 "-L./src/SDL2_TTF/x86_64-w64-mingw32/lib", // SDL2 TTF lib folder
                 "-L./src/curl/lib", // libcurl
                 "-L./src/libzip", // libzib
+                "-L./src/googletest/build/lib", // Google Test
                 "-lzip", // libzib
                 "-lcurl", // libcurl
-				"-lmingw32", // MingW compiler library found here C:\msys64\mingw64\lib\libmingw32.a
-				"-lSDL2main", // SDL2 library
-				"-lSDL2", // SDL2 library
-				"-lSDL2_image", // SDL Image
-				"-lSDL2_ttf", // SDL TTF
-				"-lSDL2_mixer", // SDL Mixer
-                "-lws2_32" // for #include <Winsock.2> // not needed unless creating a web server DEV ONLY
-				// "-mwindows" // for removing cmd when .exe is run, for final release only
+                "-lmingw32", // MingW compiler library found here C:\msys64\mingw64\lib\libmingw32.a
+                "-lSDL2main", // SDL2 library
+                "-lSDL2", // SDL2 library
+                "-lSDL2_image", // SDL Image
+                "-lSDL2_ttf", // SDL TTF
+                "-lSDL2_mixer", // SDL Mixer
+                "-lgtest_main", // Google Test
+                "-lgtest", // Google Test
+                "-lgmock_main", // Google Test
+                "-lgmock", // Google Test
+                "-lws2_32", // for #include <Winsock.2> // not needed unless creating a web server DEV ONLY
+                // "-mwindows" // for removing cmd when .exe is run, for final release only
             ],
             "options": {
                 "cwd": "${fileDirname}"
