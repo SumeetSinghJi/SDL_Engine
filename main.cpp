@@ -23,10 +23,10 @@
     * Fix lives function
     * test win animation
     * Readme read file
+    * Sign.exe with relevant CA
     * Practice unit testing, then do it for next project senet
     * on Win draw line
-    * ChatGPT a simple .exe then reverse engineer it
-    * Google Test
+    * Google Test (Unit and Integration + Automatic on build)
     * Parralex background for world map
     * Secret hidden clickable scene, appears only after unlocking all other scenes, is a space game
     * Save game file for unlocked scenes, and achievements

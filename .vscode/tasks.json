@@ -13,7 +13,7 @@
                 "-I./src/SDL2_TTF/x86_64-w64-mingw32/include/SDL2", // SDL2 TTF header folder
                 "-I./src/curl/include", // libcurl
                 "-I./src/libzip", // libzib
-                "-I./src/googletest/googletest/include/gtest", // Google Test
+                "-I./src/googletest/googletest/include", // Google Test
                 "-g",
                 "${file}", // uncomment for only building main.cpp
                 // "${fileDirname}/*.cpp", // uncomment for combining all .cpp files
