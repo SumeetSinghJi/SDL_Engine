@@ -13,10 +13,9 @@
 
 /*
     To DO - Tic Tac Toe
-    * 
-    * Tic Tac Toe - Keyboard selection in Game field. Important as template for every other game
+    * Tic Tac Toe - Keyboard selection in Game field. Important as template for every other game ttt_keyboard_on_screen_handle
     * For popup time - slider texture background + 1 for button then create drag logic
-    * Keyboard selection fix
+    * Keyboard selection fix with highlight
     * Fix Win history
     * Test update function - render text into a popup
     * Test CMAKE with libzip and curl
